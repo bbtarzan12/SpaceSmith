@@ -13,6 +13,9 @@ void UPlayerInventoryEntry::SetListItemObjectInternal(UObject* InObject)
 
 void UPlayerInventoryEntry::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
 {
+	if (Item->Row.ItemID == 0)
+		return;
+
 	if (UInventorySlotDragOperation* DragOperation = Cast<UInventorySlotDragOperation>(UWidgetBlueprintLibrary::CreateDragDropOperation(UInventorySlotDragOperation::StaticClass())))
 	{
 		DragOperation->DefaultDragVisual = this;

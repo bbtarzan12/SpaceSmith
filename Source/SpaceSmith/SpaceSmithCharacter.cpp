@@ -33,6 +33,9 @@ ASpaceSmithCharacter::ASpaceSmithCharacter()
 	HoldingPhysicsJoint->SetupAttachment(HoldingSlot);
 
 	GetMesh()->SetupAttachment(FirstPersonCameraComponent);
+
+	EquipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EquipmentMesh"));
+	EquipMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("AttachPoint"));
 }
 
 void ASpaceSmithCharacter::BeginPlay()
@@ -155,6 +158,69 @@ void ASpaceSmithCharacter::OnInventory()
 	CharacterController->ToggleInventoryUMG();
 }
 
+void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
+{
+	EquipMesh->SetStaticMesh(nullptr);
+
+	if (Slot)
+	{
+		if (Slot->Row.bEquip)
+		{
+			EquipMesh->SetStaticMesh(Slot->Row.Mesh);
+		}
+	}
+}
+
+void ASpaceSmithCharacter::SlotKey1()
+{
+	Slot(CharacterController->SelectSlot(0));
+}
+
+void ASpaceSmithCharacter::SlotKey2()
+{
+	Slot(CharacterController->SelectSlot(1));
+}
+
+void ASpaceSmithCharacter::SlotKey3()
+{
+	Slot(CharacterController->SelectSlot(2));
+}
+
+void ASpaceSmithCharacter::SlotKey4()
+{
+	Slot(CharacterController->SelectSlot(3));
+}
+
+void ASpaceSmithCharacter::SlotKey5()
+{
+	Slot(CharacterController->SelectSlot(4));
+}
+
+void ASpaceSmithCharacter::SlotKey6()
+{
+	Slot(CharacterController->SelectSlot(5));
+}
+
+void ASpaceSmithCharacter::SlotKey7()
+{
+	Slot(CharacterController->SelectSlot(6));
+}
+
+void ASpaceSmithCharacter::SlotKey8()
+{
+	Slot(CharacterController->SelectSlot(7));
+}
+
+void ASpaceSmithCharacter::SlotKey9()
+{
+	Slot(CharacterController->SelectSlot(8));
+}
+
+void ASpaceSmithCharacter::SlotKey0()
+{
+	Slot(CharacterController->SelectSlot(9));
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -182,6 +248,16 @@ void ASpaceSmithCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Hold", IE_Pressed, this, &ASpaceSmithCharacter::OnHold);
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpaceSmithCharacter::OnInventory);
 
+	PlayerInputComponent->BindAction("1", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey1);
+	PlayerInputComponent->BindAction("2", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey2);
+	PlayerInputComponent->BindAction("3", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey3);
+	PlayerInputComponent->BindAction("4", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey4);
+	PlayerInputComponent->BindAction("5", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey5);
+	PlayerInputComponent->BindAction("6", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey6);
+	PlayerInputComponent->BindAction("7", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey7);
+	PlayerInputComponent->BindAction("8", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey8);
+	PlayerInputComponent->BindAction("9", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey9);
+	PlayerInputComponent->BindAction("0", IE_Pressed, this, &ASpaceSmithCharacter::SlotKey0);
 }
 
 void ASpaceSmithCharacter::MoveForward(float Value)

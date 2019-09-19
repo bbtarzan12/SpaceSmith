@@ -42,5 +42,8 @@ private:
 	UFUNCTION(BlueprintCallable)
 	FText GetAmount() const;
 
+	UFUNCTION(BlueprintCallable)
+	ESlateVisibility IsSelected() const;
+
 
 };

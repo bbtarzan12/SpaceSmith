@@ -8,6 +8,7 @@
 
 class UInputComponent;
 class ABaseItem;
+class UInventorySlot;
 
 UCLASS(config=Game)
 class ASpaceSmithCharacter : public ACharacter
@@ -19,6 +20,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void PickUp();
 	void Drop();
+	void Slot(UInventorySlot* Slot);
 
 	UFUNCTION(BlueprintCallable, Category = "Pickable")
 	FORCEINLINE bool HasHoldingItem() const { return HoldingItem != nullptr; }
@@ -40,6 +42,17 @@ private:
 	void OnInteract(); //E
 	void OnInventory(); //I
 
+	void SlotKey1();
+	void SlotKey2();
+	void SlotKey3();
+	void SlotKey4();
+	void SlotKey5();
+	void SlotKey6();
+	void SlotKey7();
+	void SlotKey8();
+	void SlotKey9();
+	void SlotKey0();
+
 private:
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -53,6 +66,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Pick)
 	class ASpaceSmithCharacterController* CharacterController;
+
+	UPROPERTY(VisibleAnywhere, Category = Mesh)
+	class UStaticMeshComponent* EquipMesh;
 
 	UPROPERTY(EditAnywhere, Category = Pick)
 	float HoldingDistance;

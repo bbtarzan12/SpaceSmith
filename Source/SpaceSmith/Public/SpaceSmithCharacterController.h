@@ -20,6 +20,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Amount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bSelected;
 };
 
 /**
@@ -44,6 +47,8 @@ public:
 	bool SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
 
 	FORCEINLINE bool GetInventoryVisible() const { return bInventoryVisible; }
+
+	UInventorySlot* SelectSlot(int32 SlotIndex);
 
 protected:
 	virtual void BeginPlay() override;
@@ -70,6 +75,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	int32 QuickSlotLimit = 10;
+
+	UPROPERTY(VisibleAnywhere)
+	UInventorySlot* CurrentSelectedSlot;
 
 	static FItemRow* EmptyItemRow;
 

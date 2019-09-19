@@ -7,6 +7,7 @@
 #include "PlayerInventoryWidget.h"
 #include "SpaceSmithGameMode.h"
 #include <WidgetBlueprintLibrary.h>
+#include "SpaceSmithCharacter.h"
 
 FItemRow* ASpaceSmithCharacterController::EmptyItemRow;
 
@@ -53,6 +54,8 @@ void ASpaceSmithCharacterController::BeginPlay()
 		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
 		ReloadInventory();
 	}
+
+	CurrentSelectedSlot = nullptr;
 }
 
 
@@ -192,6 +195,46 @@ bool ASpaceSmithCharacterController::SwapItem(UInventorySlot* Slot1, UInventoryS
 	Slot2->Row = TempRow;
 	Slot2->Amount = TempAmount;
 
+	// 놓은 곳이 슬롯이라면
+	if (QuickSlot.Contains(Slot1))
+	{
+		// 근데 선택된 슬롯에 놨다면
+		if (CurrentSelectedSlot == Slot1)
+		{
+			ASpaceSmithCharacter* SmithCharacter = Cast<ASpaceSmithCharacter>(GetPawn());
+			SmithCharacter->Slot(Slot1);
+		}
+	}
+
+	// 선택된 슬롯이 있는데 이 슬롯이 이제 비어있다면
+	if (CurrentSelectedSlot && CurrentSelectedSlot->Row.ItemID == 0)
+	{
+		ASpaceSmithCharacter* SmithCharacter = Cast<ASpaceSmithCharacter>(GetPawn());
+		SmithCharacter->Slot(CurrentSelectedSlot);
+	}
+
 	ReloadInventory();
 	return true;
+}
+
+UInventorySlot* ASpaceSmithCharacterController::SelectSlot(int32 SlotIndex)
+{
+	ensureMsgf(SlotIndex >= 0 && SlotIndex < QuickSlotLimit, TEXT("SlotIndex : %d, QuicSlotLimit : %d"), SlotIndex, QuickSlotLimit);
+
+	if (CurrentSelectedSlot == QuickSlot[SlotIndex])
+	{
+		CurrentSelectedSlot->bSelected = false;
+		CurrentSelectedSlot = nullptr;
+		return nullptr;
+	}
+
+	if (CurrentSelectedSlot)
+	{
+		CurrentSelectedSlot->bSelected = false;
+	}
+
+	CurrentSelectedSlot = QuickSlot[SlotIndex];
+	CurrentSelectedSlot->bSelected = true;
+	ReloadInventory();
+	return CurrentSelectedSlot;
 }

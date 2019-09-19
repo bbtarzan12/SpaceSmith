@@ -31,6 +31,9 @@ public:
 	bool bStack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bEquip;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Description;
 
 	bool operator==(const FItemRow& OtherItem) const;

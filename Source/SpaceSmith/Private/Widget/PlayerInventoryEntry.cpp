@@ -51,3 +51,13 @@ FText UPlayerInventoryEntry::GetAmount() const
 		return FText::GetEmpty();
 	return FText::AsNumber(ItemSlot->Amount);
 }
+
+ESlateVisibility UPlayerInventoryEntry::IsSelected() const
+{
+	if (ItemSlot->bSelected)
+	{
+		return ESlateVisibility::Visible;
+	}
+
+	return ESlateVisibility::Hidden;
+}

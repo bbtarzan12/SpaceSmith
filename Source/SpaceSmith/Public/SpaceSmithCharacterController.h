@@ -7,16 +7,18 @@
 #include "DataTable/ItemDataTable.h"
 #include "SpaceSmithCharacterController.generated.h"
 
-UCLASS()
+class ABaseItem;
+
+UCLASS(BlueprintType)
 class UInventoryItem : public UObject
 {
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FItemRow Row;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Amount;
 };
 
@@ -32,8 +34,13 @@ public:
 	ASpaceSmithCharacterController();
 
 	void ReloadInventory();
-	bool AddItemToInventory(const FItemRow& ItemRow);
+	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);
 	void ToggleInventoryUMG();
+
+	UFUNCTION(BlueprintCallable)
+	bool DropItemToWorld(const FItemRow& ItemRow, int32 Amount);
+
+	FORCEINLINE bool GetInventoryVisible() const { return bInventoryVisible; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,6 +55,9 @@ private:
 	class UPlayerInventoryWidget* InventoryWidget;
 
 	TSubclassOf<class UUserWidget> InventoryWidgetClass;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bInventoryVisible;
 
 	
 };

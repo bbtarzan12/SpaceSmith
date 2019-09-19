@@ -12,6 +12,7 @@ ABaseItem::ABaseItem()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
 	Mesh->SetSimulatePhysics(true);
 	Mesh->SetCustomDepthStencilValue(252);
+	Mesh->SetCollisionProfileName(TEXT("Item"));
 
 	RootComponent = Mesh;
 }
@@ -22,10 +23,16 @@ void ABaseItem::BeginPlay()
 	Super::BeginPlay();
 
 	FItemRow* Row = DataTableHandle.GetRow<FItemRow>(TEXT("Can not found FItemRow"));
-	if (ensure(Row))
+	if (Row)
 	{
-		ItemData = *Row;
+		InitializeItem(*Row);
 	}
+}
+
+void ABaseItem::InitializeItem(FItemRow Item)
+{
+	ItemData = Item;
+	Mesh->SetStaticMesh(Item.Mesh);
 }
 
 // Called every frame
@@ -59,4 +66,3 @@ void ABaseItem::Deselect()
 	Mesh->SetRenderCustomDepth(false);
 	bSelected = false;
 }
-

@@ -25,6 +25,12 @@ public:
 	UTexture2D* Thumbnail;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UStaticMesh* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bStack;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Description;
 
 	bool operator==(const FItemRow& OtherItem) const;

@@ -21,10 +21,6 @@
 
 ASpaceSmithCharacter::ASpaceSmithCharacter()
 {
-	// set our turn rates for input
-	BaseTurnRate = 45.f;
-	BaseLookUpRate = 45.f;
-
 	// Create a CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
@@ -150,7 +146,7 @@ void ASpaceSmithCharacter::OnInteract()
 {
 	if (HasSelectedItem())
 	{
-		CharacterController->AddItemToInventory(SelectedItem->ItemData);
+		CharacterController->AddItemToInventory(SelectedItem);
 	}
 }
 
@@ -178,10 +174,8 @@ void ASpaceSmithCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("TurnRate", this, &ASpaceSmithCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("LookUpRate", this, &ASpaceSmithCharacter::LookUpAtRate);
+	PlayerInputComponent->BindAxis("Turn", this, &ASpaceSmithCharacter::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASpaceSmithCharacter::AddControllerPitchInput);
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpaceSmithCharacter::OnInteract);
 	PlayerInputComponent->BindAction("Action", IE_Pressed, this, &ASpaceSmithCharacter::OnAction);
@@ -192,6 +186,9 @@ void ASpaceSmithCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 void ASpaceSmithCharacter::MoveForward(float Value)
 {
+	if (CharacterController->GetInventoryVisible())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -201,6 +198,9 @@ void ASpaceSmithCharacter::MoveForward(float Value)
 
 void ASpaceSmithCharacter::MoveRight(float Value)
 {
+	if (CharacterController->GetInventoryVisible())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -208,14 +208,18 @@ void ASpaceSmithCharacter::MoveRight(float Value)
 	}
 }
 
-void ASpaceSmithCharacter::TurnAtRate(float Rate)
+void ASpaceSmithCharacter::AddControllerYawInput(float Val)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	if (CharacterController->GetInventoryVisible())
+		return;
+
+	Super::AddControllerYawInput(Val);
 }
 
-void ASpaceSmithCharacter::LookUpAtRate(float Rate)
+void ASpaceSmithCharacter::AddControllerPitchInput(float Val)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	if (CharacterController->GetInventoryVisible())
+		return;
+
+	Super::AddControllerPitchInput(Val);
 }

@@ -23,6 +23,8 @@ public:
 	virtual void Drop();
 	virtual void Select();
 	virtual void Deselect();
+	
+	void InitializeItem(FItemRow Item);
 
 protected:
 	// Called when the game starts or when spawned

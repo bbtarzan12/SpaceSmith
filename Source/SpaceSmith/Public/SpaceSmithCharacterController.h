@@ -10,7 +10,7 @@
 class ABaseItem;
 
 UCLASS(BlueprintType)
-class UInventoryItem : public UObject
+class UInventorySlot : public UObject
 {
 	GENERATED_BODY()
 	
@@ -38,7 +38,10 @@ public:
 	void ToggleInventoryUMG();
 
 	UFUNCTION(BlueprintCallable)
-	bool DropItemToWorld(const FItemRow& ItemRow, int32 Amount);
+	bool DropItemToWorld(UInventorySlot* InventorySlot, int32 Amount);
+
+	UFUNCTION(BlueprintCallable)
+	bool SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
 
 	FORCEINLINE bool GetInventoryVisible() const { return bInventoryVisible; }
 
@@ -48,7 +51,10 @@ protected:
 
 public:
 	UPROPERTY(VisibleAnywhere)
-	TArray<UInventoryItem*> Inventory;
+	TArray<UInventorySlot*> Inventory;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<UInventorySlot*> QuickSlot;
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -61,6 +67,11 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	int32 InventoryLimit = 30;
+
+	UPROPERTY(VisibleAnywhere)
+	int32 QuickSlotLimit = 10;
+
+	static FItemRow* EmptyItemRow;
 
 	
 };

@@ -6,8 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerInventoryWidget.generated.h"
 
-class UInventoryItem;
-struct FItemRow;
+class UInventorySlot;
 
 /**
  * 
@@ -18,14 +17,11 @@ class SPACESMITH_API UPlayerInventoryWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	void ClearTiles();
-	void AddItem(UInventoryItem* Item);
-	void FillEmptyTiles(int32 NumEmptyTiles);
+	void ClearSlots();
+	void AddSlot(UInventorySlot* Slot);
 	
 private:
 	UPROPERTY(meta = (BindWidget))
-	class UTileView* InventoryTile;
-
-	static FItemRow* EmptyItemRow;
+	class UTileView* SlotTile;
 
 };

@@ -17,5 +17,8 @@ class SPACESMITH_API UPlayerMasterWidget : public UUserWidget
 public:
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerInventoryWidget* Inventory;
+
+	UPROPERTY(meta = (BindWidget))
+	class UPlayerInventoryWidget* QuickBar;
 	
 };

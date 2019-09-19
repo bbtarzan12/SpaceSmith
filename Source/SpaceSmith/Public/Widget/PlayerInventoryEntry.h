@@ -22,7 +22,7 @@ protected:
 
 private:
 	UPROPERTY()
-	class UInventoryItem* Item;
+	class UInventorySlot* ItemSlot;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Name;

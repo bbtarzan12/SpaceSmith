@@ -8,18 +8,18 @@
 
 void UPlayerInventoryEntry::SetListItemObjectInternal(UObject* InObject)
 {
-	Item = Cast<UInventoryItem>(InObject);
+	ItemSlot = Cast<UInventorySlot>(InObject);
 }
 
 void UPlayerInventoryEntry::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
 {
-	if (Item->Row.ItemID == 0)
+	if (ItemSlot->Row.ItemID == 0)
 		return;
 
 	if (UInventorySlotDragOperation* DragOperation = Cast<UInventorySlotDragOperation>(UWidgetBlueprintLibrary::CreateDragDropOperation(UInventorySlotDragOperation::StaticClass())))
 	{
 		DragOperation->DefaultDragVisual = this;
-		DragOperation->Payload = Item;
+		DragOperation->Payload = ItemSlot;
 		OutOperation = DragOperation;
 	}
 }
@@ -28,6 +28,8 @@ bool UPlayerInventoryEntry::NativeOnDrop(const FGeometry& InGeometry, const FDra
 {
 	if (UInventorySlotDragOperation* DropOperation = Cast<UInventorySlotDragOperation>(InOperation))
 	{
+		ASpaceSmithCharacterController* Controller = Cast<ASpaceSmithCharacterController>(GetWorld()->GetFirstPlayerController());
+		Controller->SwapItem(ItemSlot, Cast<UInventorySlot>(DropOperation->Payload));
 		return true;
 	}
 	return false;
@@ -35,17 +37,17 @@ bool UPlayerInventoryEntry::NativeOnDrop(const FGeometry& InGeometry, const FDra
 
 FText UPlayerInventoryEntry::GetName() const
 {
-	return Item->Row.Name;
+	return ItemSlot->Row.Name;
 }
 
 UTexture2D* UPlayerInventoryEntry::GetImage() const
 {
-	return Item->Row.Thumbnail;
+	return ItemSlot->Row.Thumbnail;
 }
 
 FText UPlayerInventoryEntry::GetAmount() const
 {
-	if (Item->Amount <= 0)
+	if (ItemSlot->Amount <= 0)
 		return FText::GetEmpty();
-	return FText::AsNumber(Item->Amount);
+	return FText::AsNumber(ItemSlot->Amount);
 }

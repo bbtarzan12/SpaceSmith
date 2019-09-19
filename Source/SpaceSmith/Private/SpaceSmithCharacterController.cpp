@@ -5,6 +5,10 @@
 #include "Public/BaseItem.h"
 #include "Public/Widget/PlayerMasterWidget.h"
 #include "PlayerInventoryWidget.h"
+#include "SpaceSmithGameMode.h"
+#include <WidgetBlueprintLibrary.h>
+
+FItemRow* ASpaceSmithCharacterController::EmptyItemRow;
 
 ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 {
@@ -19,6 +23,28 @@ void ASpaceSmithCharacterController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetInputMode(FInputModeGameOnly());
+
+	ASpaceSmithGameMode* GameMode = Cast<ASpaceSmithGameMode>(GetWorld()->GetAuthGameMode());
+	EmptyItemRow = GameMode->ItemDataTable->FindRow<FItemRow>(TEXT("Empty"), FString("Can not Found Empty from FItemRow"));
+	ensure(EmptyItemRow);
+
+	for (int32 Num = 0; Num < InventoryLimit; Num++)
+	{
+		UInventorySlot* NewItem = NewObject<UInventorySlot>();
+		NewItem->Amount = 0;
+		NewItem->Row = *EmptyItemRow;
+		Inventory.Add(NewItem);
+	}
+
+	for (int32 Num = 0; Num < QuickSlotLimit; Num++)
+	{
+		UInventorySlot* NewItem = NewObject<UInventorySlot>();
+		NewItem->Amount = 0;
+		NewItem->Row = *EmptyItemRow;
+		QuickSlot.Add(NewItem);
+	}
+
 	Widget = CreateWidget<UPlayerMasterWidget>(GetWorld(), WidgetClass);
 	if (ensure(Widget))
 	{
@@ -32,51 +58,61 @@ void ASpaceSmithCharacterController::BeginPlay()
 
 void ASpaceSmithCharacterController::ReloadInventory()
 {
-	Widget->Inventory->ClearTiles();
+	Widget->Inventory->ClearSlots();
+	Widget->QuickBar->ClearSlots();
 
 	for (auto & Item : Inventory)
 	{
-		Widget->Inventory->AddItem(Item);
+		Widget->Inventory->AddSlot(Item);
 	}
-	Widget->Inventory->FillEmptyTiles(InventoryLimit - Inventory.Num());
+
+	for (auto& Item : QuickSlot)
+	{
+		Widget->QuickBar->AddSlot(Item);
+	}
 }
 
 bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, bool Destroy)
 {
-	UInventoryItem* StoredItem = nullptr;
+	UInventorySlot* StoredSlot = nullptr;
 	
 	const FItemRow& ItemData = AddingItem->ItemData;
 
 	if (ItemData.bStack)
 	{
-		for (auto & Item : Inventory)
+		for (auto & Slot : Inventory)
 		{
-			if (Item->Row.ItemID == 0 || Item->Row == ItemData)
+			if (Slot->Row == ItemData)
 			{
-				StoredItem = Item;
+				StoredSlot = Slot;
 				break;
 			}
 		}
 	}
 
-	if (StoredItem)
+	if (StoredSlot == nullptr)
 	{
-		if (StoredItem->Row.ItemID == 0)
+		for (auto & Slot : Inventory)
 		{
-			StoredItem->Row = ItemData;
-			StoredItem->Amount = 1;
+			if (Slot->Row.ItemID == 0)
+			{
+				StoredSlot = Slot;
+				break;
+			}
+		}
+	}
+
+	if (StoredSlot)
+	{
+		if (StoredSlot->Row.ItemID == 0)
+		{
+			StoredSlot->Row = ItemData;
+			StoredSlot->Amount = 1;
 		}
 		else
 		{
-			StoredItem->Amount++;
+			StoredSlot->Amount++;
 		}
-	}
-	else
-	{
-		UInventoryItem* NewItem = NewObject<UInventoryItem>();
-		NewItem->Amount = 1;
-		NewItem->Row = ItemData;
-		Inventory.Add(NewItem);
 	}
 
 	if (Destroy)
@@ -97,6 +133,7 @@ void ASpaceSmithCharacterController::ToggleInventoryUMG()
 		bShowMouseCursor = false;
 		bEnableClickEvents = false;
 		bEnableMouseOverEvents = false;
+		SetInputMode(FInputModeGameOnly());
 	}
 	else
 	{
@@ -106,38 +143,19 @@ void ASpaceSmithCharacterController::ToggleInventoryUMG()
 		bEnableClickEvents = true;
 		bEnableMouseOverEvents = true;
 		ReloadInventory();
+		SetInputMode(FInputModeGameAndUI());
 	}
 }
 
-bool ASpaceSmithCharacterController::DropItemToWorld(const FItemRow& ItemRow, int32 Amount)
+bool ASpaceSmithCharacterController::DropItemToWorld(UInventorySlot* Slot, int32 Amount)
 {
-	UInventoryItem* StoredItem = nullptr;
-
-	for (auto & Item : Inventory)
-	{
-		if (Item->Row == ItemRow)
-		{
-			StoredItem = Item;
-			break;
-		}
-	}
-
-	if (StoredItem == nullptr)
-	{
+	if (Slot == nullptr)
 		return false;
-	}
 
-	if (StoredItem->Amount < Amount)
-	{
+	if (Slot->Amount < Amount)
 		return false;
-	}
 
-	StoredItem->Amount -= Amount;
-
-	if (StoredItem->Amount <= 0)
-	{
-		Inventory.Remove(StoredItem);
-	}
+	Slot->Amount -= Amount;
 
 	FVector PawnLocation = GetPawn()->GetActorLocation() + GetPawn()->GetActorForwardVector() * 50.0f;
 	FRotator PawnRotator = FQuat::Identity.Rotator();
@@ -146,9 +164,33 @@ bool ASpaceSmithCharacterController::DropItemToWorld(const FItemRow& ItemRow, in
 	{
 		if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ABaseItem::StaticClass(), PawnLocation + GetPawn()->GetActorUpVector() * Num * 25.0f, PawnRotator))
 		{
-			ItemActor->InitializeItem(StoredItem->Row);
+			ItemActor->InitializeItem(Slot->Row);
 		}
 	}
+
+	if (Slot->Amount <= 0)
+	{
+		Slot->Row = *EmptyItemRow;
+		Slot->Amount = 0;
+	}
+
+	ReloadInventory();
+	return true;
+}
+
+bool ASpaceSmithCharacterController::SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2)
+{
+	FItemRow TempRow;
+	int32 TempAmount;
+
+	TempRow = Slot1->Row;
+	TempAmount = Slot1->Amount;
+
+	Slot1->Row = Slot2->Row;
+	Slot1->Amount = Slot2->Amount;
+
+	Slot2->Row = TempRow;
+	Slot2->Amount = TempAmount;
 
 	ReloadInventory();
 	return true;

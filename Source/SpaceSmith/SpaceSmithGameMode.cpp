@@ -16,4 +16,10 @@ ASpaceSmithGameMode::ASpaceSmithGameMode()
 
 	// use our custom HUD class
 	HUDClass = ASpaceSmithHUD::StaticClass();
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> ItemDataTableFinder(TEXT("DataTable'/Game/SpaceSmith/Data/DataTable/ItemDataTable'"));
+	if (ItemDataTableFinder.Succeeded())
+	{
+		ItemDataTable = ItemDataTableFinder.Object;
+	}
 }

@@ -13,6 +13,9 @@ class ASpaceSmithGameMode : public AGameModeBase
 
 public:
 	ASpaceSmithGameMode();
+
+public:
+	class UDataTable* ItemDataTable;
 };
 
 

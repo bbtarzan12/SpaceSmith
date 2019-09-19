@@ -52,12 +52,15 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere)
-	class UPlayerInventoryWidget* InventoryWidget;
+	class UPlayerMasterWidget* Widget;
 
-	TSubclassOf<class UUserWidget> InventoryWidgetClass;
+	TSubclassOf<class UUserWidget> WidgetClass;
 
 	UPROPERTY(VisibleAnywhere)
 	bool bInventoryVisible;
+
+	UPROPERTY(VisibleAnywhere)
+	int32 InventoryLimit = 30;
 
 	
 };

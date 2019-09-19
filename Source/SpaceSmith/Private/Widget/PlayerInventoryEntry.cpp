@@ -42,5 +42,7 @@ UTexture2D* UPlayerInventoryEntry::GetImage() const
 
 FText UPlayerInventoryEntry::GetAmount() const
 {
+	if (Item->Amount <= 0)
+		return FText::GetEmpty();
 	return FText::AsNumber(Item->Amount);
 }

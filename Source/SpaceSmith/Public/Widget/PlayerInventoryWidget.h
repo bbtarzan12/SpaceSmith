@@ -7,6 +7,7 @@
 #include "PlayerInventoryWidget.generated.h"
 
 class UInventoryItem;
+struct FItemRow;
 
 /**
  * 
@@ -19,9 +20,12 @@ class SPACESMITH_API UPlayerInventoryWidget : public UUserWidget
 public:
 	void ClearTiles();
 	void AddItem(UInventoryItem* Item);
+	void FillEmptyTiles(int32 NumEmptyTiles);
 	
 private:
 	UPROPERTY(meta = (BindWidget))
 	class UTileView* InventoryTile;
+
+	static FItemRow* EmptyItemRow;
 
 };

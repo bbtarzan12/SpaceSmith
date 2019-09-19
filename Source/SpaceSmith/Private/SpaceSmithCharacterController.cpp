@@ -2,26 +2,43 @@
 
 
 #include "SpaceSmithCharacterController.h"
-#include "Public/Widget/PlayerInventoryWidget.h"
 #include "Public/BaseItem.h"
+#include "Public/Widget/PlayerMasterWidget.h"
+#include "PlayerInventoryWidget.h"
 
 ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 {
-	static ConstructorHelpers::FClassFinder<UPlayerInventoryWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/PlayerInventory'"));
+	static ConstructorHelpers::FClassFinder<UPlayerMasterWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/PlayerMaster'"));
 	if (WidgetAsset.Succeeded())
 	{
-		InventoryWidgetClass = WidgetAsset.Class;
+		WidgetClass = WidgetAsset.Class;
 	}
 }
 
+void ASpaceSmithCharacterController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	Widget = CreateWidget<UPlayerMasterWidget>(GetWorld(), WidgetClass);
+	if (ensure(Widget))
+	{
+		Widget->AddToViewport(9999);
+		Widget->SetVisibility(ESlateVisibility::Visible);
+		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
+		ReloadInventory();
+	}
+}
+
+
 void ASpaceSmithCharacterController::ReloadInventory()
 {
-	InventoryWidget->ClearTiles();
+	Widget->Inventory->ClearTiles();
 
 	for (auto & Item : Inventory)
 	{
-		InventoryWidget->AddItem(Item);
+		Widget->Inventory->AddItem(Item);
 	}
+	Widget->Inventory->FillEmptyTiles(InventoryLimit - Inventory.Num());
 }
 
 bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, bool Destroy)
@@ -34,7 +51,7 @@ bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, b
 	{
 		for (auto & Item : Inventory)
 		{
-			if (Item->Row == ItemData)
+			if (Item->Row.ItemID == 0 || Item->Row == ItemData)
 			{
 				StoredItem = Item;
 				break;
@@ -44,7 +61,15 @@ bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, b
 
 	if (StoredItem)
 	{
-		StoredItem->Amount++;
+		if (StoredItem->Row.ItemID == 0)
+		{
+			StoredItem->Row = ItemData;
+			StoredItem->Amount = 1;
+		}
+		else
+		{
+			StoredItem->Amount++;
+		}
 	}
 	else
 	{
@@ -65,9 +90,9 @@ bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, b
 
 void ASpaceSmithCharacterController::ToggleInventoryUMG()
 {
-	if (InventoryWidget->IsVisible())
+	if (Widget->Inventory->IsVisible())
 	{
-		InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
 		bInventoryVisible = false;
 		bShowMouseCursor = false;
 		bEnableClickEvents = false;
@@ -75,11 +100,12 @@ void ASpaceSmithCharacterController::ToggleInventoryUMG()
 	}
 	else
 	{
-		InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+		Widget->Inventory->SetVisibility(ESlateVisibility::Visible);
 		bInventoryVisible = true;
 		bShowMouseCursor = true;
 		bEnableClickEvents = true;
 		bEnableMouseOverEvents = true;
+		ReloadInventory();
 	}
 }
 
@@ -126,16 +152,4 @@ bool ASpaceSmithCharacterController::DropItemToWorld(const FItemRow& ItemRow, in
 
 	ReloadInventory();
 	return true;
-}
-
-void ASpaceSmithCharacterController::BeginPlay()
-{
-	Super::BeginPlay();
-
-	InventoryWidget = CreateWidget<UPlayerInventoryWidget>(GetWorld(), InventoryWidgetClass);
-	if (ensure(InventoryWidget))
-	{
-		InventoryWidget->AddToViewport(9999);
-		InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
-	}
 }

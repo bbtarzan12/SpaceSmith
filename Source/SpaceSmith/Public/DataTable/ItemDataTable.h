@@ -16,7 +16,7 @@ public:
 	FItemRow();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ItemID;
+	int32 ItemID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Name;

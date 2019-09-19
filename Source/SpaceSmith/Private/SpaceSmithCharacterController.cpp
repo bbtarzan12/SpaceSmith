@@ -177,6 +177,12 @@ bool ASpaceSmithCharacterController::DropItemToWorld(UInventorySlot* Slot, int32
 		Slot->Amount = 0;
 	}
 
+	if (Slot == CurrentSelectedSlot)
+	{
+		ASpaceSmithCharacter* SmithCharacter = Cast<ASpaceSmithCharacter>(GetPawn());
+		SmithCharacter->Slot(CurrentSelectedSlot);
+	}
+
 	ReloadInventory();
 	return true;
 }

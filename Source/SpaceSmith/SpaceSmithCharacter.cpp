@@ -164,10 +164,7 @@ void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
 
 	if (Slot)
 	{
-		if (Slot->Row.bEquip)
-		{
-			EquipMesh->SetStaticMesh(Slot->Row.Mesh);
-		}
+		EquipMesh->SetStaticMesh(Slot->Row.Mesh);
 	}
 }
 

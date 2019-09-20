@@ -8,22 +8,7 @@
 #include "SpaceSmithCharacterController.generated.h"
 
 class ABaseItem;
-
-UCLASS(BlueprintType)
-class UInventorySlot : public UObject
-{
-	GENERATED_BODY()
-	
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FItemRow Row;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Amount;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bSelected;
-};
+class UInventoryComponent;
 
 /**
  * 
@@ -53,13 +38,25 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+private:
+	UFUNCTION()
+	void OnAddItem(ABaseItem* AddingItem);
+
+	UFUNCTION()
+	void OnDropItem(UInventorySlot* Slot, FItemRow ItemRow, int32 Amount);
+
+	UFUNCTION()
+	void OnSwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
+
+	UFUNCTION()
+	void OnSetCapacity(int32 NewCapacity);
 
 public:
 	UPROPERTY(VisibleAnywhere)
-	TArray<UInventorySlot*> Inventory;
+	UInventoryComponent* Inventory;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<UInventorySlot*> QuickSlot;
+	UInventoryComponent* QuickSlot;
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -77,9 +74,7 @@ private:
 	int32 QuickSlotLimit = 10;
 
 	UPROPERTY(VisibleAnywhere)
-	UInventorySlot* CurrentSelectedSlot;
-
-	static FItemRow* EmptyItemRow;
+	UInventorySlot* CurrentSelectedQuickSlot;
 
 	
 };

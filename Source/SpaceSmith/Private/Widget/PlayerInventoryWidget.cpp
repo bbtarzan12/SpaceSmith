@@ -5,6 +5,7 @@
 #include "Public/SpaceSmithCharacterController.h"
 #include <TileView.h>
 #include "..\..\Public\Widget\PlayerInventoryWidget.h"
+#include "Public/Component/InventoryComponent.h"
 
 void UPlayerInventoryWidget::AddSlot(UInventorySlot* Slot)
 {

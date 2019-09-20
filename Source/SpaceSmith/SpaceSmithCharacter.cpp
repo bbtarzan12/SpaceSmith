@@ -13,6 +13,7 @@
 #include "Public/BaseItem.h"
 #include <PhysicsEngine/PhysicsConstraintComponent.h>
 #include "Public/SpaceSmithCharacterController.h"
+#include "Public/Component/InventoryComponent.h"
 
 
 
@@ -35,7 +36,7 @@ ASpaceSmithCharacter::ASpaceSmithCharacter()
 	GetMesh()->SetupAttachment(FirstPersonCameraComponent);
 
 	EquipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EquipmentMesh"));
-	EquipMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("AttachPoint"));
+	EquipMesh->SetupAttachment(GetMesh(), TEXT("AttachPoint"));
 }
 
 void ASpaceSmithCharacter::BeginPlay()

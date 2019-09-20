@@ -2,9 +2,9 @@
 
 
 #include "PlayerInventoryEntry.h"
-#include "Public/SpaceSmithCharacterController.h"
 #include "Public/Widget/DragAndDrop/InventorySlotDragOperation.h"
 #include <WidgetBlueprintLibrary.h>
+#include "Public/Component/InventoryComponent.h"
 
 void UPlayerInventoryEntry::SetListItemObjectInternal(UObject* InObject)
 {
@@ -28,8 +28,8 @@ bool UPlayerInventoryEntry::NativeOnDrop(const FGeometry& InGeometry, const FDra
 {
 	if (UInventorySlotDragOperation* DropOperation = Cast<UInventorySlotDragOperation>(InOperation))
 	{
-		ASpaceSmithCharacterController* Controller = Cast<ASpaceSmithCharacterController>(GetWorld()->GetFirstPlayerController());
-		Controller->SwapItem(ItemSlot, Cast<UInventorySlot>(DropOperation->Payload));
+		UInventorySlot* ItemSlot2 = Cast<UInventorySlot>(DropOperation->Payload);
+		ItemSlot2->Inventory->SwapItem(ItemSlot, ItemSlot2);
 		return true;
 	}
 	return false;

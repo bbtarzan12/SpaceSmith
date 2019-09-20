@@ -31,7 +31,7 @@ void UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 {
 	UInventorySlot* StoredSlot = nullptr;
 
-	const FItemRow& ItemData = AddingItem->ItemData;
+	const FItemRow& ItemData = AddingItem->Data;
 
 	if (ItemData.bStack)
 	{

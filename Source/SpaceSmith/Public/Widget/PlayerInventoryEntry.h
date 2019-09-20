@@ -21,7 +21,7 @@ protected:
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 private:
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	class UInventorySlot* ItemSlot;
 
 	UPROPERTY(meta = (BindWidget))

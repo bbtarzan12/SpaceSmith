@@ -4,11 +4,9 @@
 #include "ItemDataTable.h"
 
 
-bool FItemRow::operator==(const FItemRow& OtherItem) const
+bool FItemRow::operator==(const FItemRow& Other) const
 {
-	if (ItemID == OtherItem.ItemID)
-		return true;
-	return false;
+	return ItemID == Other.ItemID;
 }
 
 FItemRow::FItemRow()

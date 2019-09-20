@@ -58,7 +58,7 @@ void ASpaceSmithCharacter::Tick(float DeltaTime)
 	}
 	else
 	{
-		TraceItem();
+		TraceItemAndMachine();
 	}
 }
 
@@ -93,24 +93,43 @@ void ASpaceSmithCharacter::Drop()
 	}
 }
 
-void ASpaceSmithCharacter::TraceItem()
+void ASpaceSmithCharacter::TraceItemAndMachine()
 {
 	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
 	FVector ForwardVector = FirstPersonCameraComponent->GetForwardVector();
 	FVector End = (Start + ForwardVector * SelectDistance);
 	FCollisionQueryParams CQP;
 	CQP.AddIgnoredActor(this);
-	if (GetWorld()->LineTraceSingleByChannel(CurrentItemHitResult, Start, End, ECollisionChannel::ECC_Camera, CQP) && CurrentItemHitResult.Actor->IsA(ABaseItem::StaticClass()))
+
+
+	if (GetWorld()->LineTraceSingleByChannel(CurrentItemHitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
 	{
-		if (CurrentItemHitResult.Actor != SelectedItem)
+		if (CurrentItemHitResult.Actor->IsA(ABaseItem::StaticClass()))
+		{
+			SelectedItem = Cast<ABaseItem>(CurrentItemHitResult.GetActor());
+			SelectedItem->Select();
+		}
+		else
 		{
 			if (SelectedItem)
 			{
 				SelectedItem->Deselect();
+				SelectedItem = nullptr;
 			}
+		}
 
-			SelectedItem = Cast<ABaseItem>(CurrentItemHitResult.GetActor());
-			SelectedItem->Select();
+		if (CurrentItemHitResult.Actor->IsA(ABaseMachine::StaticClass()))
+		{
+			SelectedMachine = Cast<ABaseMachine>(CurrentItemHitResult.GetActor());
+			SelectedMachine->Select(CurrentItemHitResult);
+		}
+		else
+		{
+			if (SelectedMachine)
+			{
+				SelectedMachine->Deselect();
+				SelectedMachine = nullptr;
+			}
 		}
 	}
 	else
@@ -119,6 +138,12 @@ void ASpaceSmithCharacter::TraceItem()
 		{
 			SelectedItem->Deselect();
 			SelectedItem = nullptr;
+		}
+
+		if (SelectedMachine)
+		{
+			SelectedMachine->Deselect();
+			SelectedMachine = nullptr;
 		}
 	}
 }

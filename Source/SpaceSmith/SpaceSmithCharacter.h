@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Public/BaseMachine.h"
 #include "SpaceSmithCharacter.generated.h"
 
 class UInputComponent;
@@ -35,7 +36,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void TraceItem();
+	void TraceItemAndMachine();
 	void HoldItem(float DeltaTime);
 	void OnHold(); //G
 	void OnAction(); //F
@@ -78,6 +79,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Pick)
 	ABaseItem* SelectedItem;
+
+	UPROPERTY(VisibleAnywhere, Category = Pick)
+	ABaseMachine* SelectedMachine;
 
 	UPROPERTY(VisibleAnywhere, Category = Pick)
 	ABaseItem* HoldingItem;

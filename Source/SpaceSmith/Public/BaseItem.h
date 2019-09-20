@@ -24,14 +24,14 @@ public:
 	virtual void Select();
 	virtual void Deselect();
 	
-	void InitializeItem(FItemRow Item);
+	void Initialize(FItemRow Item);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:
-	FItemRow ItemData;
+	FItemRow Data;
 
 protected:
 	UPROPERTY(VisibleDefaultsOnly)

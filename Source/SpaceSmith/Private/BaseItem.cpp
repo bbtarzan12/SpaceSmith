@@ -25,13 +25,13 @@ void ABaseItem::BeginPlay()
 	FItemRow* Row = DataTableHandle.GetRow<FItemRow>(TEXT("Can not found FItemRow"));
 	if (Row)
 	{
-		InitializeItem(*Row);
+		Initialize(*Row);
 	}
 }
 
-void ABaseItem::InitializeItem(FItemRow Item)
+void ABaseItem::Initialize(FItemRow Item)
 {
-	ItemData = Item;
+	Data = Item;
 	Mesh->SetStaticMesh(Item.Mesh);
 }
 

@@ -58,16 +58,18 @@ void ABaseMachine::Tick(float DeltaTime)
 
 }
 
-void ABaseMachine::Select(FHitResult HitResult)
+bool ABaseMachine::Select_Implementation()
 {
-	FVector InformationWidgetLocation = InformationWidget->GetComponentLocation();
-	FVector TargetLocaiton = HitResult.ImpactPoint;
-	FVector InformationWidgetSmoothingLocation = FMath::Lerp(InformationWidgetLocation, TargetLocaiton, GetWorld()->DeltaTimeSeconds * 10.0f);
-	InformationWidget->SetWorldLocation(InformationWidgetSmoothingLocation);
+	//FVector InformationWidgetLocation = InformationWidget->GetComponentLocation();
+	//FVector TargetLocaiton = HitResult.ImpactPoint;
+	//FVector InformationWidgetSmoothingLocation = FMath::Lerp(InformationWidgetLocation, TargetLocaiton, GetWorld()->DeltaTimeSeconds * 50.0f);
+	//InformationWidget->SetWorldLocation(InformationWidgetSmoothingLocation);
 	InformationWidget->SetHiddenInGame(false);
+	return true;
 }
 
-void ABaseMachine::Deselect()
+bool ABaseMachine::Deselect_Implementation()
 {
 	InformationWidget->SetHiddenInGame(true);
+	return true;
 }

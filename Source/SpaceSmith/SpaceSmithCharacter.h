@@ -26,8 +26,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Pickable")
 	FORCEINLINE bool HasHoldingItem() const { return HoldingItem != nullptr; }
 
-	UFUNCTION(BlueprintCallable, Category = "Pickable")
-	FORCEINLINE bool HasSelectedItem() const { return SelectedItem != nullptr; }
+	UFUNCTION(BlueprintCallable, Category = "Select")
+	FORCEINLINE bool HasSelectedItem() const { return Selectable.GetObject() != nullptr; }
 
 	virtual void AddControllerYawInput(float Val) override;
 	virtual void AddControllerPitchInput(float Val) override;
@@ -36,7 +36,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void TraceItemAndMachine();
+	void TraceSelectable();
 	void HoldItem(float DeltaTime);
 	void OnHold(); //G
 	void OnAction(); //F
@@ -56,37 +56,34 @@ private:
 
 private:
 	/** First person camera */
-	UPROPERTY(VisibleAnywhere, Category = Camera)
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	class UCameraComponent* FirstPersonCameraComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = Pick)
+	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	class UPhysicsConstraintComponent* HoldingPhysicsJoint;
 
-	UPROPERTY(VisibleAnywhere, Category = Pick)
+	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	class UStaticMeshComponent* HoldingSlot;
 
-	UPROPERTY(VisibleAnywhere, Category = Pick)
+	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	class ASpaceSmithCharacterController* CharacterController;
 
 	UPROPERTY(VisibleAnywhere, Category = Mesh)
 	class UStaticMeshComponent* EquipMesh;
 
-	UPROPERTY(EditAnywhere, Category = Pick)
+	UPROPERTY(EditAnywhere, Category = "Select")
 	float HoldingDistance;
 
-	UPROPERTY(EditAnywhere, Category = Pick)
+	UPROPERTY(EditAnywhere, Category = "Select")
 	float SelectDistance;
 
-	UPROPERTY(VisibleAnywhere, Category = Pick)
-	ABaseItem* SelectedItem;
+	UPROPERTY(VisibleAnywhere, Category = "Select")
+	TScriptInterface<ISelect> Selectable;
 
-	UPROPERTY(VisibleAnywhere, Category = Pick)
-	ABaseMachine* SelectedMachine;
-
-	UPROPERTY(VisibleAnywhere, Category = Pick)
+	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	ABaseItem* HoldingItem;
 
-	UPROPERTY(VisibleAnywhere, Category = Pick)
+	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	FHitResult CurrentItemHitResult;
 
 protected:

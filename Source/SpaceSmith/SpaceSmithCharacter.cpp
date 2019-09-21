@@ -58,7 +58,7 @@ void ASpaceSmithCharacter::Tick(float DeltaTime)
 	}
 	else
 	{
-		TraceItemAndMachine();
+		TraceSelectable();
 	}
 }
 
@@ -66,7 +66,7 @@ void ASpaceSmithCharacter::PickUp()
 {
 	if (HasSelectedItem())
 	{
-		HoldingItem = SelectedItem;
+		/*HoldingItem = SelectedItem;
 		HoldingItem->Select();
 		SelectedItem = nullptr;
 		HoldingItem->PickUp(Cast<AActor>(this));
@@ -74,7 +74,7 @@ void ASpaceSmithCharacter::PickUp()
 		HoldingSlot->SetWorldLocation(CurrentItemHitResult.ImpactPoint);
 		HoldingPhysicsJoint->ConstraintActor1 = this;
 		HoldingPhysicsJoint->ConstraintActor2 = HoldingItem;
-		HoldingPhysicsJoint->SetConstrainedComponents(Cast<UPrimitiveComponent>(HoldingSlot), NAME_None, Cast<UPrimitiveComponent>(HoldingItem->GetRootComponent()), NAME_None);
+		HoldingPhysicsJoint->SetConstrainedComponents(Cast<UPrimitiveComponent>(HoldingSlot), NAME_None, Cast<UPrimitiveComponent>(HoldingItem->GetRootComponent()), NAME_None);*/
 	}
 }
 
@@ -82,18 +82,18 @@ void ASpaceSmithCharacter::Drop()
 {
 	if (HasHoldingItem())
 	{
-		HoldingItem->Drop();
+		/*HoldingItem->Drop();
 		HoldingItem->Deselect();
 
 		HoldingPhysicsJoint->BreakConstraint();
 		HoldingPhysicsJoint->ConstraintActor1 = nullptr;
 		HoldingPhysicsJoint->ConstraintActor2 = nullptr;
 
-		HoldingItem = nullptr;
+		HoldingItem = nullptr;*/
 	}
 }
 
-void ASpaceSmithCharacter::TraceItemAndMachine()
+void ASpaceSmithCharacter::TraceSelectable()
 {
 	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
 	FVector ForwardVector = FirstPersonCameraComponent->GetForwardVector();
@@ -104,46 +104,36 @@ void ASpaceSmithCharacter::TraceItemAndMachine()
 
 	if (GetWorld()->LineTraceSingleByChannel(CurrentItemHitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
 	{
-		if (CurrentItemHitResult.Actor->IsA(ABaseItem::StaticClass()))
+		if (CurrentItemHitResult.GetActor()->GetClass()->ImplementsInterface(USelect::StaticClass()))
 		{
-			SelectedItem = Cast<ABaseItem>(CurrentItemHitResult.GetActor());
-			SelectedItem->Select();
-		}
-		else
-		{
-			if (SelectedItem)
+			if (Selectable.GetObject())
 			{
-				SelectedItem->Deselect();
-				SelectedItem = nullptr;
+				ISelect::Execute_Deselect(Selectable.GetObject());
+				Selectable.SetObject(nullptr);
+				Selectable.SetInterface(nullptr);
 			}
-		}
 
-		if (CurrentItemHitResult.Actor->IsA(ABaseMachine::StaticClass()))
-		{
-			SelectedMachine = Cast<ABaseMachine>(CurrentItemHitResult.GetActor());
-			SelectedMachine->Select(CurrentItemHitResult);
+			Selectable.SetObject(CurrentItemHitResult.GetActor());
+			Selectable.SetInterface(Cast<ISelect>(CurrentItemHitResult.GetActor()));
+			ISelect::Execute_Select(Selectable.GetObject());
 		}
 		else
 		{
-			if (SelectedMachine)
+			if (Selectable.GetObject())
 			{
-				SelectedMachine->Deselect();
-				SelectedMachine = nullptr;
+				ISelect::Execute_Deselect(Selectable.GetObject());
+				Selectable.SetObject(nullptr);
+				Selectable.SetInterface(nullptr);
 			}
 		}
 	}
 	else
 	{
-		if (SelectedItem)
+		if (Selectable.GetObject())
 		{
-			SelectedItem->Deselect();
-			SelectedItem = nullptr;
-		}
-
-		if (SelectedMachine)
-		{
-			SelectedMachine->Deselect();
-			SelectedMachine = nullptr;
+			ISelect::Execute_Deselect(Selectable.GetObject());
+			Selectable.SetObject(nullptr);
+			Selectable.SetInterface(nullptr);
 		}
 	}
 }
@@ -175,7 +165,10 @@ void ASpaceSmithCharacter::OnInteract()
 {
 	if (HasSelectedItem())
 	{
-		CharacterController->AddItemToInventory(SelectedItem);
+		if (IInteract* Interactable = Cast<IInteract>(Selectable.GetObject()))
+		{
+			IInteract::Execute_Interact(Selectable.GetObject(), GetController());
+		}
 	}
 }
 

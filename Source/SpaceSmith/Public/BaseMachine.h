@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "DataTable/MachineDataTable.h"
+#include "Interface/Select.h"
 #include "BaseMachine.generated.h"
 
 UCLASS()
-class SPACESMITH_API ABaseMachine : public AActor
+class SPACESMITH_API ABaseMachine : public AActor, public ISelect
 {
 	GENERATED_BODY()
 	
@@ -20,8 +21,14 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void Initialize(FMachineRow Machine);
-	void Select(FHitResult HitResult);
-	void Deselect();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool Select();
+	virtual bool Select_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool Deselect();
+	virtual bool Deselect_Implementation() override;
 
 	FORCEINLINE const FText& GetName() const { return Data.Name; };
 

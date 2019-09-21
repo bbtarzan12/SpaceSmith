@@ -2,6 +2,7 @@
 
 
 #include "BaseItem.h"
+#include "Public/SpaceSmithCharacterController.h"
 
 // Sets default values
 ABaseItem::ABaseItem()
@@ -55,14 +56,26 @@ void ABaseItem::Drop()
 	bPicked = false;
 }
 
-void ABaseItem::Select()
+bool ABaseItem::Select_Implementation()
 {
 	Mesh->SetRenderCustomDepth(true);
 	bSelected = true;
+	return true;
 }
 
-void ABaseItem::Deselect()
+bool ABaseItem::Deselect_Implementation()
 {
 	Mesh->SetRenderCustomDepth(false);
 	bSelected = false;
+	return true;
+}
+
+bool ABaseItem::Interact_Implementation(AController* Controller)
+{
+	// Item과 Interact할 대상에 대해 좀 더 고민할 것
+	if (Controller->IsA(ASpaceSmithCharacterController::StaticClass()))
+	{
+		Cast<ASpaceSmithCharacterController>(Controller)->AddItemToInventory(this);
+	}
+	return true;
 }

@@ -10,6 +10,8 @@
 class UInputComponent;
 class ABaseItem;
 class UInventorySlot;
+class IPick;
+class ISelect;
 
 UCLASS(config=Game)
 class ASpaceSmithCharacter : public ACharacter
@@ -24,7 +26,7 @@ public:
 	void Slot(UInventorySlot* Slot);
 
 	UFUNCTION(BlueprintCallable, Category = "Pickable")
-	FORCEINLINE bool HasHoldingItem() const { return HoldingItem != nullptr; }
+	FORCEINLINE bool HasHoldingItem() const { return HoldingPickable.GetObject(); }
 
 	UFUNCTION(BlueprintCallable, Category = "Select")
 	FORCEINLINE bool HasSelectedItem() const { return Selectable.GetObject() != nullptr; }
@@ -81,10 +83,10 @@ private:
 	TScriptInterface<ISelect> Selectable;
 
 	UPROPERTY(VisibleAnywhere, Category = "Pick")
-	ABaseItem* HoldingItem;
+	TScriptInterface<IPick> HoldingPickable;
 
 	UPROPERTY(VisibleAnywhere, Category = "Pick")
-	FHitResult CurrentItemHitResult;
+	FHitResult CurrentSelectableHitResult;
 
 protected:
 

@@ -27,6 +27,7 @@ void ABaseMachine::BeginPlay()
 	InformationWidget->SetHiddenInGame(true);
 	InformationWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	InformationWidget->SetDrawAtDesiredSize(true);
+	InformationWidget->SetWorldLocation(GetActorLocation());
 	Cast<UMachineInformationWidget>(InformationWidget->GetUserWidgetObject())->Machine = this;
 
 	FMachineRow* Row = DataTableHandle.GetRow<FMachineRow>(TEXT("Can not found FMachineRow"));
@@ -58,12 +59,19 @@ void ABaseMachine::Tick(float DeltaTime)
 
 }
 
-bool ABaseMachine::Select_Implementation()
+bool ABaseMachine::Select_Implementation(FHitResult HitResult)
 {
-	//FVector InformationWidgetLocation = InformationWidget->GetComponentLocation();
-	//FVector TargetLocaiton = HitResult.ImpactPoint;
-	//FVector InformationWidgetSmoothingLocation = FMath::Lerp(InformationWidgetLocation, TargetLocaiton, GetWorld()->DeltaTimeSeconds * 50.0f);
-	//InformationWidget->SetWorldLocation(InformationWidgetSmoothingLocation);
+	InformationWidget->SetWorldLocation(HitResult.ImpactPoint);
+	InformationWidget->SetHiddenInGame(false);
+	return true;
+}
+
+bool ABaseMachine::SelectTick_Implementation(FHitResult HitResult)
+{
+	FVector InformationWidgetLocation = InformationWidget->GetComponentLocation();
+	FVector TargetLocaiton = HitResult.ImpactPoint;
+	FVector InformationWidgetSmoothingLocation = FMath::VInterpTo(InformationWidgetLocation, TargetLocaiton, GetWorld()->GetDeltaSeconds(), 50.0f);
+	InformationWidget->SetWorldLocation(InformationWidgetSmoothingLocation);
 	InformationWidget->SetHiddenInGame(false);
 	return true;
 }

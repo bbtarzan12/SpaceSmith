@@ -23,8 +23,12 @@ public:
 	void Initialize(FMachineRow Machine);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool Select();
-	virtual bool Select_Implementation() override;
+	bool Select(FHitResult HitResult);
+	virtual bool Select_Implementation(FHitResult HitResult) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool SelectTick(FHitResult HitResult);
+	virtual bool SelectTick_Implementation(FHitResult HitResult) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool Deselect();

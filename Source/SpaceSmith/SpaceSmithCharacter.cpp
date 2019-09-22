@@ -14,6 +14,7 @@
 #include <PhysicsEngine/PhysicsConstraintComponent.h>
 #include "Public/SpaceSmithCharacterController.h"
 #include "Public/Component/InventoryComponent.h"
+#include "Public/Interface/Pick.h"
 
 
 
@@ -66,15 +67,21 @@ void ASpaceSmithCharacter::PickUp()
 {
 	if (HasSelectedItem())
 	{
-		/*HoldingItem = SelectedItem;
-		HoldingItem->Select();
-		SelectedItem = nullptr;
-		HoldingItem->PickUp(Cast<AActor>(this));
+		if (Selectable.GetObject()->GetClass()->ImplementsInterface(UPick::StaticClass()))
+		{
+			HoldingPickable.SetObject(Selectable.GetObject());
+			HoldingPickable.SetInterface(Cast<IPick>(Selectable.GetObject()));
 
-		HoldingSlot->SetWorldLocation(CurrentItemHitResult.ImpactPoint);
-		HoldingPhysicsJoint->ConstraintActor1 = this;
-		HoldingPhysicsJoint->ConstraintActor2 = HoldingItem;
-		HoldingPhysicsJoint->SetConstrainedComponents(Cast<UPrimitiveComponent>(HoldingSlot), NAME_None, Cast<UPrimitiveComponent>(HoldingItem->GetRootComponent()), NAME_None);*/
+			IPick::Execute_PickUp(HoldingPickable.GetObject(), this);
+			
+			if (AActor* HoldingActor = Cast<AActor>(HoldingPickable.GetObject()))
+			{
+				HoldingSlot->SetWorldLocation(CurrentSelectableHitResult.ImpactPoint);
+				HoldingPhysicsJoint->ConstraintActor1 = this;
+				HoldingPhysicsJoint->ConstraintActor2 = HoldingActor;
+				HoldingPhysicsJoint->SetConstrainedComponents(Cast<UPrimitiveComponent>(HoldingSlot), NAME_None, Cast<UPrimitiveComponent>(HoldingActor->GetRootComponent()), NAME_None);
+			}
+		}
 	}
 }
 
@@ -82,14 +89,14 @@ void ASpaceSmithCharacter::Drop()
 {
 	if (HasHoldingItem())
 	{
-		/*HoldingItem->Drop();
-		HoldingItem->Deselect();
+		IPick::Execute_Drop(HoldingPickable.GetObject());
 
 		HoldingPhysicsJoint->BreakConstraint();
 		HoldingPhysicsJoint->ConstraintActor1 = nullptr;
 		HoldingPhysicsJoint->ConstraintActor2 = nullptr;
 
-		HoldingItem = nullptr;*/
+		HoldingPickable.SetObject(nullptr);
+		HoldingPickable.SetInterface(nullptr);
 	}
 }
 
@@ -102,20 +109,27 @@ void ASpaceSmithCharacter::TraceSelectable()
 	CQP.AddIgnoredActor(this);
 
 
-	if (GetWorld()->LineTraceSingleByChannel(CurrentItemHitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
+	if (GetWorld()->LineTraceSingleByChannel(CurrentSelectableHitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
 	{
-		if (CurrentItemHitResult.GetActor()->GetClass()->ImplementsInterface(USelect::StaticClass()))
+		if (CurrentSelectableHitResult.GetActor()->GetClass()->ImplementsInterface(USelect::StaticClass()))
 		{
-			if (Selectable.GetObject())
+			if (Selectable.GetObject() == CurrentSelectableHitResult.GetActor())
 			{
-				ISelect::Execute_Deselect(Selectable.GetObject());
-				Selectable.SetObject(nullptr);
-				Selectable.SetInterface(nullptr);
+				ISelect::Execute_SelectTick(Selectable.GetObject(), CurrentSelectableHitResult);
 			}
+			else
+			{
+				if (Selectable.GetObject())
+				{
+					ISelect::Execute_Deselect(Selectable.GetObject());
+					Selectable.SetObject(nullptr);
+					Selectable.SetInterface(nullptr);
+				}
 
-			Selectable.SetObject(CurrentItemHitResult.GetActor());
-			Selectable.SetInterface(Cast<ISelect>(CurrentItemHitResult.GetActor()));
-			ISelect::Execute_Select(Selectable.GetObject());
+				Selectable.SetObject(CurrentSelectableHitResult.GetActor());
+				Selectable.SetInterface(Cast<ISelect>(CurrentSelectableHitResult.GetActor()));
+				ISelect::Execute_Select(Selectable.GetObject(), CurrentSelectableHitResult);
+			}
 		}
 		else
 		{

@@ -8,10 +8,11 @@
 #include "DataTable/ItemDataTable.h"
 #include "Interface/Interact.h"
 #include "Interface/Select.h"
+#include "Interface/Pick.h"
 #include "BaseItem.generated.h"
 
 UCLASS()
-class SPACESMITH_API ABaseItem : public AActor, public IInteract, public ISelect
+class SPACESMITH_API ABaseItem : public AActor, public IInteract, public ISelect, public IPick
 {
 	GENERATED_BODY()
 	
@@ -21,16 +22,22 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	virtual void PickUp(AActor* Actor);
-	virtual void Drop();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool PickUp(AActor* Actor);
+	virtual bool PickUp_Implementation(AActor* Actor) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool Drop();
+	virtual bool Drop_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool Interact(AController* Controller);
 	virtual bool Interact_Implementation(AController* Controller) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool Select();
-	virtual bool Select_Implementation() override;
+	bool Select(FHitResult HitResult);
+	virtual bool Select_Implementation(FHitResult HitResult) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool Deselect();
@@ -60,7 +67,5 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bSelected;
-
-
 
 };

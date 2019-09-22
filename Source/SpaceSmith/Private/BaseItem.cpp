@@ -43,20 +43,23 @@ void ABaseItem::Tick(float DeltaTime)
 
 }
 
-void ABaseItem::PickUp(AActor* Actor)
+bool ABaseItem::PickUp_Implementation(AActor* Actor)
 {
 	HoldingActor = Actor;
 	Mesh->SetSimulatePhysics(true);
 	bPicked = true;
+	return true;
 }
 
-void ABaseItem::Drop()
+
+bool ABaseItem::Drop_Implementation()
 {
 	HoldingActor = nullptr;
 	bPicked = false;
+	return true;
 }
 
-bool ABaseItem::Select_Implementation()
+bool ABaseItem::Select_Implementation(FHitResult HitResult)
 {
 	Mesh->SetRenderCustomDepth(true);
 	bSelected = true;

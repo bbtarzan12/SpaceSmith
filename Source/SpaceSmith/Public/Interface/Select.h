@@ -23,7 +23,10 @@ class SPACESMITH_API ISelect
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Select")
-	bool Select();
+	bool Select(FHitResult HitResult);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Select")
+	bool SelectTick(FHitResult HitResult);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Select")
 	bool Deselect();

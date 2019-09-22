@@ -9,6 +9,8 @@
 #include <WidgetBlueprintLibrary.h>
 #include "SpaceSmithCharacter.h"
 #include "Public/Component/InventoryComponent.h"
+#include "Public/Widget/KeyInformationWidget.h"
+#include <GameFramework/PlayerInput.h>
 
 ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 {
@@ -20,6 +22,43 @@ ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 	QuickSlot = CreateDefaultSubobject<UInventoryComponent>(TEXT("QuickSlot"));
+}
+
+void ASpaceSmithCharacterController::Select(AActor* Actor)
+{
+	Widget->KeyInformation->Clear();
+
+	UClass* ActorClass = Actor->GetClass();
+	if (ActorClass->ImplementsInterface(UInteract::StaticClass()))
+	{
+		const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Interact"));
+		if (ActionKeyMappings.Num() > 0)
+		{
+			UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
+			KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
+			KeyInformation->KeyInformation = FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", (ActionKeyMappings[0].ActionName.ToString()));
+			Widget->KeyInformation->Add(KeyInformation);
+		}
+	}
+
+	if (ActorClass->ImplementsInterface(UPick::StaticClass()))
+	{
+		const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Hold"));
+		if (ActionKeyMappings.Num() > 0)
+		{
+			UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
+			KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
+			KeyInformation->KeyInformation = FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", (ActionKeyMappings[0].ActionName.ToString()));
+			Widget->KeyInformation->Add(KeyInformation);
+		}
+	}
+	Widget->KeyInformation->SetVisibility(ESlateVisibility::Visible);
+}
+
+void ASpaceSmithCharacterController::Deselect()
+{
+	Widget->KeyInformation->Clear();
+	Widget->KeyInformation->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void ASpaceSmithCharacterController::BeginPlay()
@@ -116,17 +155,17 @@ void ASpaceSmithCharacterController::OnSetCapacity(int32 NewCapacity)
 
 void ASpaceSmithCharacterController::ReloadInventory()
 {
-	Widget->Inventory->ClearSlots();
-	Widget->QuickBar->ClearSlots();
+	Widget->Inventory->Clear();
+	Widget->QuickBar->Clear();
 
 	for (auto & Item : Inventory->GetItems())
 	{
-		Widget->Inventory->AddSlot(Item);
+		Widget->Inventory->Add(Item);
 	}
 
 	for (auto& Item : QuickSlot->GetItems())
 	{
-		Widget->QuickBar->AddSlot(Item);
+		Widget->QuickBar->Add(Item);
 	}
 }
 

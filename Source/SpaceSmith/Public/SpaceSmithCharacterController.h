@@ -21,6 +21,9 @@ class SPACESMITH_API ASpaceSmithCharacterController : public APlayerController
 public:
 	ASpaceSmithCharacterController();
 
+	void Select(AActor* Actor);
+	void Deselect();
+
 	void ReloadInventory();
 	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);
 	void ToggleInventoryUMG();

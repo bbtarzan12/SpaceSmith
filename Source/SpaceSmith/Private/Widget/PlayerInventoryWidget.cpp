@@ -7,12 +7,12 @@
 #include "..\..\Public\Widget\PlayerInventoryWidget.h"
 #include "Public/Component/InventoryComponent.h"
 
-void UPlayerInventoryWidget::AddSlot(UInventorySlot* Slot)
+void UPlayerInventoryWidget::Add(UInventorySlot* Slot)
 {
 	SlotTile->AddItem(Slot);
 }
 
-void UPlayerInventoryWidget::ClearSlots()
+void UPlayerInventoryWidget::Clear()
 {
 	SlotTile->ClearListItems();
 }

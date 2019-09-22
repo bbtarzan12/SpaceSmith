@@ -21,4 +21,7 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerInventoryWidget* QuickBar;
 	
+	UPROPERTY(meta = (BindWidget))
+	class UKeyInformationWidget* KeyInformation;
+
 };

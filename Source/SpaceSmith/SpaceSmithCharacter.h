@@ -38,7 +38,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void TraceSelectable();
+	void TraceObject();
 	void HoldItem(float DeltaTime);
 	void OnHold(); //G
 	void OnAction(); //F

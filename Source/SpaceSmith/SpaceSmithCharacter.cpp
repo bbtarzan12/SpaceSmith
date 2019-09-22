@@ -59,7 +59,7 @@ void ASpaceSmithCharacter::Tick(float DeltaTime)
 	}
 	else
 	{
-		TraceSelectable();
+		TraceObject();
 	}
 }
 
@@ -100,7 +100,7 @@ void ASpaceSmithCharacter::Drop()
 	}
 }
 
-void ASpaceSmithCharacter::TraceSelectable()
+void ASpaceSmithCharacter::TraceObject()
 {
 	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
 	FVector ForwardVector = FirstPersonCameraComponent->GetForwardVector();
@@ -140,6 +140,7 @@ void ASpaceSmithCharacter::TraceSelectable()
 				Selectable.SetInterface(nullptr);
 			}
 		}
+		CharacterController->Select(CurrentSelectableHitResult.GetActor());
 	}
 	else
 	{
@@ -149,6 +150,7 @@ void ASpaceSmithCharacter::TraceSelectable()
 			Selectable.SetObject(nullptr);
 			Selectable.SetInterface(nullptr);
 		}
+		CharacterController->Deselect();
 	}
 }
 
@@ -182,6 +184,7 @@ void ASpaceSmithCharacter::OnInteract()
 		if (IInteract* Interactable = Cast<IInteract>(Selectable.GetObject()))
 		{
 			IInteract::Execute_Interact(Selectable.GetObject(), GetController());
+			Drop();
 		}
 	}
 }

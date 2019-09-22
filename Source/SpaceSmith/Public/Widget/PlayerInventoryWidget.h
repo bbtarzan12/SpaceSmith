@@ -17,8 +17,8 @@ class SPACESMITH_API UPlayerInventoryWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	void ClearSlots();
-	void AddSlot(UInventorySlot* Slot);
+	void Clear();
+	void Add(UInventorySlot* Slot);
 	
 private:
 	UPROPERTY(meta = (BindWidget))

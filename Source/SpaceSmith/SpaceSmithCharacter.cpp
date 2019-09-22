@@ -158,6 +158,7 @@ void ASpaceSmithCharacter::HoldItem(float DeltaTime)
 {
 	FVector Location = FirstPersonCameraComponent->GetComponentLocation() + FirstPersonCameraComponent->GetForwardVector() * HoldingDistance;
 	HoldingSlot->SetWorldLocation(FMath::Lerp(HoldingSlot->GetComponentLocation(), Location, DeltaTime * 10.0f));
+	CharacterController->Select(Cast<AActor>(HoldingPickable.GetObject()));
 }
 
 void ASpaceSmithCharacter::OnHold()
@@ -184,7 +185,8 @@ void ASpaceSmithCharacter::OnInteract()
 		if (IInteract* Interactable = Cast<IInteract>(Selectable.GetObject()))
 		{
 			IInteract::Execute_Interact(Selectable.GetObject(), GetController());
-			Drop();
+
+			Drop(); // Pick Up한 상태로 Interact를 하면 문제가 발생해서 임시로 호출
 		}
 	}
 }

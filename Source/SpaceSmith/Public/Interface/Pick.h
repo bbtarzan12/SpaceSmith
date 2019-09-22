@@ -27,4 +27,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pick")
 	bool Drop();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pick")
+	FText GetPickInformationText();
 };

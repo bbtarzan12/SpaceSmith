@@ -24,4 +24,7 @@ class SPACESMITH_API IInteract
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
 	bool Interact(AController* Controller);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
+	FText GetInteractInformationText();
 };

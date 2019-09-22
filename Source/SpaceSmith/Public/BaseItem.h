@@ -11,6 +11,13 @@
 #include "Interface/Pick.h"
 #include "BaseItem.generated.h"
 
+UENUM(BlueprintType)
+enum class EItemState : uint8
+{
+	Idle,
+	Hold
+};
+
 UCLASS()
 class SPACESMITH_API ABaseItem : public AActor, public IInteract, public ISelect, public IPick
 {
@@ -43,6 +50,14 @@ public:
 	bool Deselect();
 	virtual bool Deselect_Implementation() override;
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FText GetPickInformationText();
+	virtual FText GetPickInformationText_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FText GetInteractInformationText();
+	virtual FText GetInteractInformationText_Implementation() override;
+
 	void Initialize(FItemRow Item);
 
 protected:
@@ -67,5 +82,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bSelected;
+
+	UPROPERTY(VisibleAnywhere)
+	EItemState State;
 
 };

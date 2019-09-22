@@ -28,31 +28,34 @@ void ASpaceSmithCharacterController::Select(AActor* Actor)
 {
 	Widget->KeyInformation->Clear();
 
-	UClass* ActorClass = Actor->GetClass();
-	if (ActorClass->ImplementsInterface(UInteract::StaticClass()))
+	if (Actor)
 	{
-		const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Interact"));
-		if (ActionKeyMappings.Num() > 0)
+		UClass* ActorClass = Actor->GetClass();
+		if (ActorClass->ImplementsInterface(UInteract::StaticClass()))
 		{
-			UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
-			KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
-			KeyInformation->KeyInformation = FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", (ActionKeyMappings[0].ActionName.ToString()));
-			Widget->KeyInformation->Add(KeyInformation);
+			const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Interact"));
+			if (ActionKeyMappings.Num() > 0)
+			{
+				UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
+				KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
+				KeyInformation->KeyInformation = IInteract::Execute_GetInteractInformationText(Actor);
+				Widget->KeyInformation->Add(KeyInformation);
+			}
 		}
-	}
 
-	if (ActorClass->ImplementsInterface(UPick::StaticClass()))
-	{
-		const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Hold"));
-		if (ActionKeyMappings.Num() > 0)
+		if (ActorClass->ImplementsInterface(UPick::StaticClass()))
 		{
-			UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
-			KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
-			KeyInformation->KeyInformation = FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", (ActionKeyMappings[0].ActionName.ToString()));
-			Widget->KeyInformation->Add(KeyInformation);
+			const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Hold"));
+			if (ActionKeyMappings.Num() > 0)
+			{
+				UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
+				KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
+				KeyInformation->KeyInformation = IPick::Execute_GetPickInformationText(Actor);
+				Widget->KeyInformation->Add(KeyInformation);
+			}
 		}
+		Widget->KeyInformation->SetVisibility(ESlateVisibility::Visible);
 	}
-	Widget->KeyInformation->SetVisibility(ESlateVisibility::Visible);
 }
 
 void ASpaceSmithCharacterController::Deselect()

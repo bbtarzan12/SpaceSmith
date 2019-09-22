@@ -30,6 +30,24 @@ void ABaseItem::BeginPlay()
 	}
 }
 
+FText ABaseItem::GetPickInformationText_Implementation()
+{
+	switch (State)
+	{
+		case EItemState::Idle:
+			return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Hold_Item_Idle")));
+		case EItemState::Hold:
+			return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Hold_Item_Hold")));
+	}
+
+	return FText::GetEmpty();
+}
+
+FText ABaseItem::GetInteractInformationText_Implementation()
+{
+	return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Interact_Item")));
+}
+
 void ABaseItem::Initialize(FItemRow Item)
 {
 	Data = Item;
@@ -48,6 +66,7 @@ bool ABaseItem::PickUp_Implementation(AActor* Actor)
 	HoldingActor = Actor;
 	Mesh->SetSimulatePhysics(true);
 	bPicked = true;
+	State = EItemState::Hold;
 	return true;
 }
 
@@ -56,6 +75,7 @@ bool ABaseItem::Drop_Implementation()
 {
 	HoldingActor = nullptr;
 	bPicked = false;
+	State = EItemState::Idle;
 	return true;
 }
 

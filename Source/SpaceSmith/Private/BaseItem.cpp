@@ -3,6 +3,7 @@
 
 #include "BaseItem.h"
 #include "Public/SpaceSmithCharacterController.h"
+#include "InventoryComponent.h"
 
 // Sets default values
 ABaseItem::ABaseItem()
@@ -95,10 +96,16 @@ bool ABaseItem::Deselect_Implementation()
 
 bool ABaseItem::Interact_Implementation(AController* Controller)
 {
-	// Item과 Interact할 대상에 대해 좀 더 고민할 것
-	if (Controller->IsA(ASpaceSmithCharacterController::StaticClass()))
+	TArray<UInventoryComponent*> InventoryComponents;
+	Controller->GetComponents(InventoryComponents);
+
+	for (auto & Inventory : InventoryComponents)
 	{
-		Cast<ASpaceSmithCharacterController>(Controller)->AddItemToInventory(this);
+		if (Inventory->AddItem(this, true))
+		{
+			return true;
+		}
 	}
-	return true;
+
+	return false;
 }

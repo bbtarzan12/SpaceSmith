@@ -44,7 +44,7 @@ public:
 	// Sets default values for this component's properties
 	UInventoryComponent();
 
-	void AddItem(ABaseItem* AddingItem, bool Destroy = true);
+	bool AddItem(ABaseItem* AddingItem, bool Destroy = true);
 	void DropItem(UInventorySlot* Slot, int32 Amount);
 	void SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
 	bool Contains(UInventorySlot* Slot);

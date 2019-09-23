@@ -81,3 +81,8 @@ bool ABaseMachine::Deselect_Implementation()
 	InformationWidget->SetHiddenInGame(true);
 	return true;
 }
+
+bool ABaseMachine::Interact_Implementation(AController* Controller)
+{
+	return true;
+}

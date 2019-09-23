@@ -6,10 +6,11 @@
 #include "GameFramework/Actor.h"
 #include "DataTable/MachineDataTable.h"
 #include "Interface/Select.h"
+#include "Interact.h"
 #include "BaseMachine.generated.h"
 
 UCLASS()
-class SPACESMITH_API ABaseMachine : public AActor, public ISelect
+class SPACESMITH_API ABaseMachine : public AActor, public ISelect, public IInteract
 {
 	GENERATED_BODY()
 	
@@ -33,6 +34,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool Deselect();
 	virtual bool Deselect_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool Interact(AController* Controller);
+	virtual bool Interact_Implementation(AController* Controller) override;
 
 	FORCEINLINE const FText& GetName() const { return Data.Name; };
 

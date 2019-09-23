@@ -27,14 +27,16 @@ void UInventoryComponent::BeginPlay()
 	SetCapacity(1);
 }
 
-void UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/)
+bool UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/)
 {
 	UInventorySlot* StoredSlot = nullptr;
 
 	const FItemRow& ItemData = AddingItem->Data;
 
+	// 스택을 쌓을 수 있다면
 	if (ItemData.bStack)
 	{
+		// 같은 종류의 아이템을 찾는다
 		for (auto & Slot : Inventory)
 		{
 			if (Slot->Row == ItemData)
@@ -45,8 +47,10 @@ void UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 		}
 	}
 
+	// 같은 종류의 아이템이 없다면
 	if (StoredSlot == nullptr)
 	{
+		// 빈 아이템 슬롯을 찾는다
 		for (auto & Slot : Inventory)
 		{
 			if (Slot->Row.ItemID == 0)
@@ -57,6 +61,8 @@ void UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 		}
 	}
 
+	// 스택을 쌓을 수 있는 아이템 슬롯을 찾았거나,
+	// 빈 아이템 슬롯을 찾았다면 성공
 	if (StoredSlot)
 	{
 		if (StoredSlot->Row.ItemID == 0)
@@ -69,6 +75,10 @@ void UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 			StoredSlot->Amount++;
 		}
 	}
+	else // 실패
+	{
+		return false;
+	}
 
 	if (Destroy)
 	{
@@ -76,6 +86,7 @@ void UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 	}
 
 	OnAddItem.Broadcast(AddingItem);
+	return true;
 }
 
 void UInventoryComponent::DropItem(UInventorySlot* Slot, int32 Amount)

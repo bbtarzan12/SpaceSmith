@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "PlayerInventoryWidget.generated.h"
+#include "InventoryWidget.generated.h"
 
 class UInventorySlot;
 
@@ -12,17 +12,16 @@ class UInventorySlot;
  * 
  */
 UCLASS()
-class SPACESMITH_API UPlayerInventoryWidget : public UUserWidget
+class SPACESMITH_API UInventoryWidget : public UUserWidget
 {
 	GENERATED_BODY()
-
+	
 public:
 	void Add(UInventorySlot* Slot);
 	void Clear();
-
+	
 private:
 	UPROPERTY(meta = (BindWidget))
-	class UInventoryWidget* Inventory;
+	class UTileView* SlotTile;
 
-	
 };

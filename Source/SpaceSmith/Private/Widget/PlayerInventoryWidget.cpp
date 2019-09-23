@@ -2,17 +2,14 @@
 
 
 #include "PlayerInventoryWidget.h"
-#include "Public/SpaceSmithCharacterController.h"
-#include <TileView.h>
-#include "..\..\Public\Widget\PlayerInventoryWidget.h"
-#include "Public/Component/InventoryComponent.h"
+#include "InventoryWidget.h"
 
 void UPlayerInventoryWidget::Add(UInventorySlot* Slot)
 {
-	SlotTile->AddItem(Slot);
+	Inventory->Add(Slot);
 }
 
 void UPlayerInventoryWidget::Clear()
 {
-	SlotTile->ClearListItems();
+	Inventory->Clear();
 }

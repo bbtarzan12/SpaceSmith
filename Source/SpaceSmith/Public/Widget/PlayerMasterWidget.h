@@ -19,7 +19,7 @@ public:
 	class UPlayerInventoryWidget* Inventory;
 
 	UPROPERTY(meta = (BindWidget))
-	class UPlayerInventoryWidget* QuickBar;
+	class UInventoryWidget* QuickBar;
 	
 	UPROPERTY(meta = (BindWidget))
 	class UKeyInformationWidget* KeyInformation;

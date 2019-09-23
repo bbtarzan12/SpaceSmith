@@ -5,6 +5,8 @@
 #include "Public/BaseItem.h"
 #include "Public/Widget/PlayerMasterWidget.h"
 #include "PlayerInventoryWidget.h"
+#include "InventoryWidget.h"
+#include "InventoryWidget.h"
 #include "SpaceSmithGameMode.h"
 #include <WidgetBlueprintLibrary.h>
 #include "SpaceSmithCharacter.h"

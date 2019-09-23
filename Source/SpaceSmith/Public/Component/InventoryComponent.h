@@ -44,6 +44,7 @@ public:
 	// Sets default values for this component's properties
 	UInventoryComponent();
 
+	void SetName(FText NewInventoryName);
 	bool AddItem(ABaseItem* AddingItem, bool Destroy = true);
 	void DropItem(UInventorySlot* Slot, int32 Amount);
 	void SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
@@ -51,6 +52,7 @@ public:
 	void SetCapacity(int32 NewCapacity);
 
 	FORCEINLINE const TArray<UInventorySlot*>& GetItems() const { return Inventory; };
+	FORCEINLINE const FText& GetInventoryName() const { return InventoryName; }
 
 	UPROPERTY(BlueprintAssignable)
 	FInventoryOnAddSignature OnAddItem;
@@ -71,6 +73,9 @@ protected:
 private:
 	UPROPERTY(VisibleAnywhere)
 	TArray<UInventorySlot*> Inventory;
+
+	UPROPERTY(VisibleAnywhere)
+	FText InventoryName;
 
 	static FItemRow* EmptyItemRow;
 

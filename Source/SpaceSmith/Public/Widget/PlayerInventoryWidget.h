@@ -7,6 +7,7 @@
 #include "PlayerInventoryWidget.generated.h"
 
 class UInventorySlot;
+class UInventoryComponent;
 
 /**
  * 
@@ -17,6 +18,7 @@ class SPACESMITH_API UPlayerInventoryWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	void SetOwner(UInventoryComponent* NewOwner);
 	void Add(UInventorySlot* Slot);
 	void Clear();
 

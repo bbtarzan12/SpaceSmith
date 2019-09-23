@@ -54,7 +54,7 @@ protected:
 public:
 	FMachineRow Data;
 
-private:
+protected:
 	UPROPERTY(EditAnywhere)
 	FDataTableRowHandle DataTableHandle;
 

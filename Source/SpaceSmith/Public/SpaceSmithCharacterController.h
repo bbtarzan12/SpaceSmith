@@ -28,6 +28,8 @@ public:
 	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);
 	void ToggleInventoryUMG();
 
+	void EnableGameInputModeAndMouse(bool Enable);
+
 	UFUNCTION(BlueprintCallable)
 	bool DropItemToWorld(UInventorySlot* InventorySlot, int32 Amount);
 
@@ -35,6 +37,7 @@ public:
 	bool SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
 
 	FORCEINLINE bool GetInventoryVisible() const { return bInventoryVisible; }
+	FORCEINLINE bool GetViewportWidgetVisible() const { return bViewportWidgetVisible; }
 
 	UInventorySlot* SelectSlot(int32 SlotIndex);
 
@@ -69,6 +72,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bInventoryVisible;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bViewportWidgetVisible;
 
 	UPROPERTY(VisibleAnywhere)
 	int32 InventoryLimit = 30;

@@ -26,6 +26,40 @@ ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 	QuickSlot = CreateDefaultSubobject<UInventoryComponent>(TEXT("QuickSlot"));
 }
 
+void ASpaceSmithCharacterController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	SetInputMode(FInputModeGameOnly());
+
+	Widget = CreateWidget<UPlayerMasterWidget>(GetWorld(), WidgetClass);
+	if (ensure(Widget))
+	{
+		Widget->AddToViewport(0);
+		Widget->SetVisibility(ESlateVisibility::Visible);
+		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
+		Widget->Inventory->SetOwner(Inventory);
+		Widget->QuickBar->SetOwner(QuickSlot);
+	}
+
+	Inventory->OnAddItem.AddDynamic(this, &ASpaceSmithCharacterController::OnAddItem);
+	Inventory->OnDropItem.AddDynamic(this, &ASpaceSmithCharacterController::OnDropItem);
+	Inventory->OnSwapItem.AddDynamic(this, &ASpaceSmithCharacterController::OnSwapItem);
+	Inventory->OnSetCapacity.AddDynamic(this, &ASpaceSmithCharacterController::OnSetCapacity);
+
+	QuickSlot->OnAddItem.AddDynamic(this, &ASpaceSmithCharacterController::OnAddItem);
+	QuickSlot->OnDropItem.AddDynamic(this, &ASpaceSmithCharacterController::OnDropItem);
+	QuickSlot->OnSwapItem.AddDynamic(this, &ASpaceSmithCharacterController::OnSwapItem);
+	QuickSlot->OnSetCapacity.AddDynamic(this, &ASpaceSmithCharacterController::OnSetCapacity);
+
+	Inventory->SetCapacity(InventoryLimit);
+	Inventory->SetName(FText::FromString("Player"));
+	QuickSlot->SetCapacity(QuickSlotLimit);
+
+	ReloadInventory();
+	CurrentSelectedQuickSlot = nullptr;
+}
+
 void ASpaceSmithCharacterController::Select(AActor* Actor)
 {
 	Widget->KeyInformation->Clear();
@@ -64,37 +98,6 @@ void ASpaceSmithCharacterController::Deselect()
 {
 	Widget->KeyInformation->Clear();
 	Widget->KeyInformation->SetVisibility(ESlateVisibility::Hidden);
-}
-
-void ASpaceSmithCharacterController::BeginPlay()
-{
-	Super::BeginPlay();
-
-	SetInputMode(FInputModeGameOnly());
-
-	Widget = CreateWidget<UPlayerMasterWidget>(GetWorld(), WidgetClass);
-	if (ensure(Widget))
-	{
-		Widget->AddToViewport(9999);
-		Widget->SetVisibility(ESlateVisibility::Visible);
-		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
-	}
-
-	Inventory->OnAddItem.AddDynamic(this, &ASpaceSmithCharacterController::OnAddItem);
-	Inventory->OnDropItem.AddDynamic(this, &ASpaceSmithCharacterController::OnDropItem);
-	Inventory->OnSwapItem.AddDynamic(this, &ASpaceSmithCharacterController::OnSwapItem);
-	Inventory->OnSetCapacity.AddDynamic(this, &ASpaceSmithCharacterController::OnSetCapacity);
-
-	QuickSlot->OnAddItem.AddDynamic(this, &ASpaceSmithCharacterController::OnAddItem);
-	QuickSlot->OnDropItem.AddDynamic(this, &ASpaceSmithCharacterController::OnDropItem);
-	QuickSlot->OnSwapItem.AddDynamic(this, &ASpaceSmithCharacterController::OnSwapItem);
-	QuickSlot->OnSetCapacity.AddDynamic(this, &ASpaceSmithCharacterController::OnSetCapacity);
-
-	Inventory->SetCapacity(InventoryLimit);
-	QuickSlot->SetCapacity(QuickSlotLimit);
-
-	ReloadInventory();
-	CurrentSelectedQuickSlot = nullptr;
 }
 
 void ASpaceSmithCharacterController::OnAddItem(ABaseItem* AddingItem)
@@ -192,20 +195,35 @@ void ASpaceSmithCharacterController::ToggleInventoryUMG()
 	{
 		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
 		bInventoryVisible = false;
-		bShowMouseCursor = false;
-		bEnableClickEvents = false;
-		bEnableMouseOverEvents = false;
-		SetInputMode(FInputModeGameOnly());
+		EnableGameInputModeAndMouse(true);
 	}
 	else
 	{
 		Widget->Inventory->SetVisibility(ESlateVisibility::Visible);
 		bInventoryVisible = true;
+		ReloadInventory();
+		EnableGameInputModeAndMouse(false);
+	}
+}
+
+void ASpaceSmithCharacterController::EnableGameInputModeAndMouse(bool Enable)
+{
+	if (Enable)
+	{
+		bShowMouseCursor = false;
+		bEnableClickEvents = false;
+		bEnableMouseOverEvents = false;
+		bViewportWidgetVisible = false;
+		SetInputMode(FInputModeGameOnly());
+	}
+	else
+	{
 		bShowMouseCursor = true;
 		bEnableClickEvents = true;
 		bEnableMouseOverEvents = true;
-		ReloadInventory();
+		bViewportWidgetVisible = true;
 		SetInputMode(FInputModeGameAndUI());
+		
 	}
 }
 

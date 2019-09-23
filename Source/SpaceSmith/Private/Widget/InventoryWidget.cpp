@@ -7,6 +7,11 @@
 #include "..\..\Public\Widget\InventoryWidget.h"
 #include "Public/Component/InventoryComponent.h"
 
+void UInventoryWidget::SetOwner(UInventoryComponent* NewOwner)
+{
+	OwnerComponent = NewOwner;
+}
+
 void UInventoryWidget::Add(UInventorySlot* Slot)
 {
 	SlotTile->AddItem(Slot);
@@ -15,4 +20,16 @@ void UInventoryWidget::Add(UInventorySlot* Slot)
 void UInventoryWidget::Clear()
 {
 	SlotTile->ClearListItems();
+}
+
+FText UInventoryWidget::GetName() const
+{
+	if (OwnerComponent)
+	{
+		return OwnerComponent->GetInventoryName();
+	}
+	else
+	{
+		return FText::GetEmpty();
+	}
 }

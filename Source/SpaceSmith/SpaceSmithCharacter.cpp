@@ -212,6 +212,8 @@ void ASpaceSmithCharacter::OnInteract()
 
 void ASpaceSmithCharacter::OnInventory()
 {
+	if (CharacterController->GetViewportWidgetVisible() && !CharacterController->GetInventoryVisible())
+		return;
 	CharacterController->ToggleInventoryUMG();
 }
 
@@ -319,6 +321,9 @@ void ASpaceSmithCharacter::MoveForward(float Value)
 	if (CharacterController->GetInventoryVisible())
 		return;
 
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
@@ -329,6 +334,9 @@ void ASpaceSmithCharacter::MoveForward(float Value)
 void ASpaceSmithCharacter::MoveRight(float Value)
 {
 	if (CharacterController->GetInventoryVisible())
+		return;
+
+	if (CharacterController->GetViewportWidgetVisible())
 		return;
 
 	if (Value != 0.0f)
@@ -343,12 +351,18 @@ void ASpaceSmithCharacter::AddControllerYawInput(float Val)
 	if (CharacterController->GetInventoryVisible())
 		return;
 
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
+
 	Super::AddControllerYawInput(Val);
 }
 
 void ASpaceSmithCharacter::AddControllerPitchInput(float Val)
 {
 	if (CharacterController->GetInventoryVisible())
+		return;
+
+	if (CharacterController->GetViewportWidgetVisible())
 		return;
 
 	Super::AddControllerPitchInput(Val);

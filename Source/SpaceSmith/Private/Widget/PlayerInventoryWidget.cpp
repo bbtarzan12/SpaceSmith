@@ -3,6 +3,12 @@
 
 #include "PlayerInventoryWidget.h"
 #include "InventoryWidget.h"
+#include "InventoryComponent.h"
+
+void UPlayerInventoryWidget::SetOwner(UInventoryComponent* NewOwner)
+{
+	Inventory->SetOwner(NewOwner);
+}
 
 void UPlayerInventoryWidget::Add(UInventorySlot* Slot)
 {

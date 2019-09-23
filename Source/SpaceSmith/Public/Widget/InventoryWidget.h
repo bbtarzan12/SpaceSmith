@@ -7,6 +7,7 @@
 #include "InventoryWidget.generated.h"
 
 class UInventorySlot;
+class UInventoryComponent;
 
 /**
  * 
@@ -17,11 +18,18 @@ class SPACESMITH_API UInventoryWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	void SetOwner(UInventoryComponent* NewOwner);
 	void Add(UInventorySlot* Slot);
 	void Clear();
 	
 private:
+	UPROPERTY(VisibleAnywhere)
+	UInventoryComponent* OwnerComponent;
+
 	UPROPERTY(meta = (BindWidget))
 	class UTileView* SlotTile;
+
+	UFUNCTION(BlueprintCallable)
+	FText GetName() const;
 
 };

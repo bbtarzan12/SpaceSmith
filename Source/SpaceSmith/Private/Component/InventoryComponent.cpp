@@ -15,6 +15,11 @@ UInventoryComponent::UInventoryComponent()
 
 }
 
+void UInventoryComponent::SetName(FText NewInventoryName)
+{
+	InventoryName = NewInventoryName;
+}
+
 // Called when the game starts
 void UInventoryComponent::BeginPlay()
 {

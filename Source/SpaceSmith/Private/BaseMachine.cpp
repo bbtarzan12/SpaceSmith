@@ -49,6 +49,7 @@ void ABaseMachine::Initialize(FMachineRow Machine)
 		Inventory = NewObject<UInventoryComponent>(this, TEXT("InventoryComponent"));
 		Inventory->RegisterComponent();
 		Inventory->SetCapacity(Data.Capacity);
+		Inventory->SetName(Data.Name);
 		AddOwnedComponent(Inventory);
 	}
 }
@@ -85,7 +86,6 @@ bool ABaseMachine::Deselect_Implementation()
 
 bool ABaseMachine::Interact_Implementation(ASpaceSmithCharacterController* Controller)
 {
-
 	return true;
 }
 

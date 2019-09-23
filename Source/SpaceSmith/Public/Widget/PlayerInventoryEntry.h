@@ -15,15 +15,17 @@ class SPACESMITH_API UPlayerInventoryEntry : public UUserWidget, public IUserObj
 {
 	GENERATED_BODY()
 	
+	
 protected:
 	virtual void SetListItemObjectInternal(UObject* InObject) override;
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
-private:
-	UPROPERTY(VisibleAnywhere)
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UInventorySlot* ItemSlot;
 
+private:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* Name;
 

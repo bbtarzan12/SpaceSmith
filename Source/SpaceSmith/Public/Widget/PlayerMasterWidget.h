@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerMasterWidget.generated.h"
 
+class ASpaceSmithCharacterController;
+
 /**
  * 
  */
@@ -15,6 +17,8 @@ class SPACESMITH_API UPlayerMasterWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	void SetController(ASpaceSmithCharacterController* NewController);
+
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerInventoryWidget* Inventory;
 
@@ -23,5 +27,15 @@ public:
 	
 	UPROPERTY(meta = (BindWidget))
 	class UKeyInformationWidget* KeyInformation;
+
+	UFUNCTION(BlueprintCallable)
+	ESlateVisibility GetKeyInformationVisibility() const;
+
+	UFUNCTION(BlueprintCallable)
+	ESlateVisibility GetInventoryVisibility() const;
+
+private:
+	UPROPERTY(VisibleAnywhere)
+	class ASpaceSmithCharacterController* Controller;	
 
 };

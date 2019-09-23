@@ -53,6 +53,9 @@ void ASpaceSmithCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
+
 	if (HasHoldingItem())
 	{
 		HoldItem(DeltaTime);
@@ -176,6 +179,12 @@ void ASpaceSmithCharacter::HoldItem(float DeltaTime)
 
 void ASpaceSmithCharacter::OnHold()
 {
+	if (CharacterController->GetInventoryVisible())
+		return;
+
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
+
 	if (HasHoldingItem())
 	{
 		Drop();
@@ -188,11 +197,18 @@ void ASpaceSmithCharacter::OnHold()
 
 void ASpaceSmithCharacter::OnAction()
 {
-	
+	if (CharacterController->GetInventoryVisible())
+		return;
+
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
 }
 
 void ASpaceSmithCharacter::OnInteract()
 {
+	if (CharacterController->GetInventoryVisible())
+		return;
+
 	if (HasSelectedItem())
 	{
 		if (IInteract* Interactable = Cast<IInteract>(Selectable.GetObject()))
@@ -214,11 +230,18 @@ void ASpaceSmithCharacter::OnInventory()
 {
 	if (CharacterController->GetViewportWidgetVisible() && !CharacterController->GetInventoryVisible())
 		return;
+
 	CharacterController->ToggleInventoryUMG();
 }
 
 void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
 {
+	if (CharacterController->GetInventoryVisible())
+		return;
+
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
+
 	EquipMesh->SetStaticMesh(nullptr);
 
 	if (Slot)

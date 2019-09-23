@@ -33,7 +33,6 @@ public:
 	void Add(UKeyInformation* Information);
 	void Clear();
 
-private:
 	UPROPERTY(meta = (BindWidget))
 	class UListView* InformationList;
 	

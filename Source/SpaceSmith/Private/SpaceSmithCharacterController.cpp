@@ -35,9 +35,9 @@ void ASpaceSmithCharacterController::BeginPlay()
 	Widget = CreateWidget<UPlayerMasterWidget>(GetWorld(), WidgetClass);
 	if (ensure(Widget))
 	{
+		Widget->SetController(this);
 		Widget->AddToViewport(0);
 		Widget->SetVisibility(ESlateVisibility::Visible);
-		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
 		Widget->Inventory->SetOwner(Inventory);
 		Widget->QuickBar->SetOwner(QuickSlot);
 	}
@@ -58,6 +58,7 @@ void ASpaceSmithCharacterController::BeginPlay()
 
 	ReloadInventory();
 	CurrentSelectedQuickSlot = nullptr;
+	bInventoryVisible = false;
 }
 
 void ASpaceSmithCharacterController::Select(AActor* Actor)
@@ -90,14 +91,12 @@ void ASpaceSmithCharacterController::Select(AActor* Actor)
 				Widget->KeyInformation->Add(KeyInformation);
 			}
 		}
-		Widget->KeyInformation->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
 void ASpaceSmithCharacterController::Deselect()
 {
 	Widget->KeyInformation->Clear();
-	Widget->KeyInformation->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void ASpaceSmithCharacterController::OnAddItem(ABaseItem* AddingItem)
@@ -193,37 +192,34 @@ void ASpaceSmithCharacterController::ToggleInventoryUMG()
 {
 	if (Widget->Inventory->IsVisible())
 	{
-		Widget->Inventory->SetVisibility(ESlateVisibility::Hidden);
 		bInventoryVisible = false;
-		EnableGameInputModeAndMouse(true);
+		ShowViewportWidget(false);
 	}
 	else
 	{
-		Widget->Inventory->SetVisibility(ESlateVisibility::Visible);
 		bInventoryVisible = true;
 		ReloadInventory();
-		EnableGameInputModeAndMouse(false);
+		ShowViewportWidget(true);
 	}
 }
 
-void ASpaceSmithCharacterController::EnableGameInputModeAndMouse(bool Enable)
+void ASpaceSmithCharacterController::ShowViewportWidget(bool Show)
 {
-	if (Enable)
-	{
-		bShowMouseCursor = false;
-		bEnableClickEvents = false;
-		bEnableMouseOverEvents = false;
-		bViewportWidgetVisible = false;
-		SetInputMode(FInputModeGameOnly());
-	}
-	else
+	if (Show)
 	{
 		bShowMouseCursor = true;
 		bEnableClickEvents = true;
 		bEnableMouseOverEvents = true;
 		bViewportWidgetVisible = true;
 		SetInputMode(FInputModeGameAndUI());
-		
+	}
+	else
+	{
+		bShowMouseCursor = false;
+		bEnableClickEvents = false;
+		bEnableMouseOverEvents = false;
+		bViewportWidgetVisible = false;
+		SetInputMode(FInputModeGameOnly());
 	}
 }
 

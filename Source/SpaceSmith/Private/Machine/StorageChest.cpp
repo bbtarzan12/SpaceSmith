@@ -28,33 +28,38 @@ bool AStorageChest::Interact_Implementation(ASpaceSmithCharacterController* Cont
 {
 	if (Super::Interact_Implementation(Controller))
 	{
-		if (bInteractWidgetOpen)
+		if (Controller && Controller->Inventory)
 		{
-			InteractWidget->RemoveFromViewport();
-			Controller->EnableGameInputModeAndMouse(true);
-			bInteractWidgetOpen = false;
-		}
-		else
-		{
-			InteractWidget->AddToViewport(5);
-			InteractWidget->PlayerInventory->SetOwner(Controller->Inventory);
-			Controller->EnableGameInputModeAndMouse(false);
-
-			InteractWidget->MachineInventory->Clear();
-			InteractWidget->PlayerInventory->Clear();
-
-			for (auto & Item : Controller->Inventory->GetItems())
+			if (bInteractWidgetOpen)
 			{
-				InteractWidget->PlayerInventory->Add(Item);
+				InteractWidget->RemoveFromViewport();
+				Controller->ShowViewportWidget(false);
+				bInteractWidgetOpen = false;
 			}
-
-			for (auto & Item : Inventory->GetItems())
+			else
 			{
-				InteractWidget->MachineInventory->Add(Item);
+				InteractWidget->AddToViewport(5);
+				InteractWidget->PlayerInventory->SetOwner(Controller->Inventory);
+				Controller->ShowViewportWidget(true);
+
+				InteractWidget->MachineInventory->Clear();
+				InteractWidget->PlayerInventory->Clear();
+
+				const TArray<UInventorySlot*>& PlayerItems = Controller->Inventory->GetItems();
+				for (auto & Item : PlayerItems)
+				{
+					InteractWidget->PlayerInventory->Add(Item);
+				}
+
+				const TArray<UInventorySlot*>& MachineItems = Inventory->GetItems();
+				for (auto & Item : MachineItems)
+				{
+					InteractWidget->MachineInventory->Add(Item);
+				}
+				bInteractWidgetOpen = true;
 			}
-			bInteractWidgetOpen = true;
+			return true;
 		}
-		return true;
 	}
 
 	return false;

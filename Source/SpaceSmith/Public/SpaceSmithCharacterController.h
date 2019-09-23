@@ -28,7 +28,7 @@ public:
 	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);
 	void ToggleInventoryUMG();
 
-	void EnableGameInputModeAndMouse(bool Enable);
+	void ShowViewportWidget(bool Show);
 
 	UFUNCTION(BlueprintCallable)
 	bool DropItemToWorld(UInventorySlot* InventorySlot, int32 Amount);

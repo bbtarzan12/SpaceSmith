@@ -24,7 +24,9 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	UPROPERTY(VisibleAnywhere)
 	UStorageInteractWidget* InteractWidget;
+
 	TSubclassOf<class UUserWidget> InteractWidgetClass;
 
 	UPROPERTY(VisibleAnywhere)

@@ -6,6 +6,8 @@
 #include "UObject/Interface.h"
 #include "Interact.generated.h"
 
+class ASpaceSmithCharacterController;
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UInteract : public UInterface
@@ -23,7 +25,7 @@ class SPACESMITH_API IInteract
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	bool Interact(AController* Controller);
+	bool Interact(ASpaceSmithCharacterController* Controller);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
 	FText GetInteractInformationText();

@@ -9,6 +9,8 @@
 #include "Interact.h"
 #include "BaseMachine.generated.h"
 
+class ASpaceSmithCharacterController;
+
 UCLASS()
 class SPACESMITH_API ABaseMachine : public AActor, public ISelect, public IInteract
 {
@@ -36,8 +38,12 @@ public:
 	virtual bool Deselect_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool Interact(AController* Controller);
-	virtual bool Interact_Implementation(AController* Controller) override;
+	bool Interact(ASpaceSmithCharacterController* Controller);
+	virtual bool Interact_Implementation(ASpaceSmithCharacterController* Controller) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FText GetInteractInformationText();
+	virtual FText GetInteractInformationText_Implementation() override;
 
 	FORCEINLINE const FText& GetName() const { return Data.Name; };
 

@@ -11,6 +11,8 @@
 #include "Interface/Pick.h"
 #include "BaseItem.generated.h"
 
+class ASpaceSmithCharacterController;
+
 UENUM(BlueprintType)
 enum class EItemState : uint8
 {
@@ -39,8 +41,8 @@ public:
 	virtual bool Drop_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool Interact(AController* Controller);
-	virtual bool Interact_Implementation(AController* Controller) override;
+	bool Interact(ASpaceSmithCharacterController* Controller);
+	virtual bool Interact_Implementation(ASpaceSmithCharacterController* Controller) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool Select(FHitResult HitResult);

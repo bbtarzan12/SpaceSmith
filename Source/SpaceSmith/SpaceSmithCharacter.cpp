@@ -197,7 +197,7 @@ void ASpaceSmithCharacter::OnInteract()
 	{
 		if (IInteract* Interactable = Cast<IInteract>(Selectable.GetObject()))
 		{
-			IInteract::Execute_Interact(Selectable.GetObject(), GetController());
+			IInteract::Execute_Interact(Selectable.GetObject(), CharacterController);
 
 			if (AActor* InteractableActor = Cast<AActor>(Selectable.GetObject()))
 			{

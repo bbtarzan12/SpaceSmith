@@ -94,18 +94,7 @@ bool ABaseItem::Deselect_Implementation()
 	return true;
 }
 
-bool ABaseItem::Interact_Implementation(AController* Controller)
+bool ABaseItem::Interact_Implementation(ASpaceSmithCharacterController* Controller)
 {
-	TArray<UInventoryComponent*> InventoryComponents;
-	Controller->GetComponents(InventoryComponents);
-
-	for (auto & Inventory : InventoryComponents)
-	{
-		if (Inventory->AddItem(this, true))
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return Controller->AddItemToInventory(this, true);
 }

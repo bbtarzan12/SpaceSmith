@@ -5,6 +5,7 @@
 #include "Public/Component/InventoryComponent.h"
 #include "Public/Widget/MachineInformationWidget.h"
 #include <WidgetComponent.h>
+#include "SpaceSmithCharacterController.h"
 
 // Sets default values
 ABaseMachine::ABaseMachine()
@@ -82,7 +83,13 @@ bool ABaseMachine::Deselect_Implementation()
 	return true;
 }
 
-bool ABaseMachine::Interact_Implementation(AController* Controller)
+bool ABaseMachine::Interact_Implementation(ASpaceSmithCharacterController* Controller)
 {
+
 	return true;
+}
+
+FText ABaseMachine::GetInteractInformationText_Implementation()
+{
+	return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Interact_Machine")));
 }

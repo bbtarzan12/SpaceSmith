@@ -174,7 +174,14 @@ void ASpaceSmithCharacterController::ReloadInventory()
 
 bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, bool Destroy)
 {
-	return Inventory->AddItem(AddingItem, Destroy);
+	if (!Inventory->AddItem(AddingItem, Destroy))
+	{
+		if (!QuickSlot->AddItem(AddingItem, Destroy))
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 void ASpaceSmithCharacterController::ToggleInventoryUMG()

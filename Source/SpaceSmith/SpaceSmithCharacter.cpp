@@ -90,14 +90,18 @@ void ASpaceSmithCharacter::Drop()
 	if (HasHoldingItem())
 	{
 		IPick::Execute_Drop(HoldingPickable.GetObject());
-
-		HoldingPhysicsJoint->BreakConstraint();
-		HoldingPhysicsJoint->ConstraintActor1 = nullptr;
-		HoldingPhysicsJoint->ConstraintActor2 = nullptr;
-
-		HoldingPickable.SetObject(nullptr);
-		HoldingPickable.SetInterface(nullptr);
+		ResetHolding();
 	}
+}
+
+void ASpaceSmithCharacter::ResetHolding()
+{
+	HoldingPhysicsJoint->BreakConstraint();
+	HoldingPhysicsJoint->ConstraintActor1 = nullptr;
+	HoldingPhysicsJoint->ConstraintActor2 = nullptr;
+
+	HoldingPickable.SetObject(nullptr);
+	HoldingPickable.SetInterface(nullptr);
 }
 
 void ASpaceSmithCharacter::TraceObject()
@@ -156,6 +160,15 @@ void ASpaceSmithCharacter::TraceObject()
 
 void ASpaceSmithCharacter::HoldItem(float DeltaTime)
 {
+	if (AActor* HoldingActor = Cast<AActor>(HoldingPickable.GetObject()))
+	{
+		if (HoldingActor->IsActorBeingDestroyed())
+		{
+			ResetHolding();
+			return;
+		}
+	}
+
 	FVector Location = FirstPersonCameraComponent->GetComponentLocation() + FirstPersonCameraComponent->GetForwardVector() * HoldingDistance;
 	HoldingSlot->SetWorldLocation(FMath::Lerp(HoldingSlot->GetComponentLocation(), Location, DeltaTime * 10.0f));
 	CharacterController->Select(Cast<AActor>(HoldingPickable.GetObject()));
@@ -186,7 +199,13 @@ void ASpaceSmithCharacter::OnInteract()
 		{
 			IInteract::Execute_Interact(Selectable.GetObject(), GetController());
 
-			Drop(); // Pick Up한 상태로 Interact를 하면 문제가 발생해서 임시로 호출
+			if (AActor* InteractableActor = Cast<AActor>(Selectable.GetObject()))
+			{
+				if (InteractableActor->IsActorBeingDestroyed())
+				{
+					ResetHolding();
+				}
+			}
 		}
 	}
 }

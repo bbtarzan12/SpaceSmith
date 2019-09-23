@@ -38,6 +38,8 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	void ResetHolding();
+
 	void TraceObject();
 	void HoldItem(float DeltaTime);
 	void OnHold(); //G

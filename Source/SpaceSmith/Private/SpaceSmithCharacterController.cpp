@@ -13,6 +13,7 @@
 #include "Public/Component/InventoryComponent.h"
 #include "Public/Widget/KeyInformationWidget.h"
 #include <GameFramework/PlayerInput.h>
+#include "Debug/SpaceSmithCheatManager.h"
 
 ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 {
@@ -22,6 +23,7 @@ ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 		WidgetClass = WidgetAsset.Class;
 	}
 
+	CheatClass = USpaceSmithCheatManager::StaticClass();
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 	QuickSlot = CreateDefaultSubobject<UInventoryComponent>(TEXT("QuickSlot"));
 }
@@ -117,7 +119,8 @@ void ASpaceSmithCharacterController::OnDropItem(UInventorySlot* Slot, FItemRow I
 
 	for (int32 Num = 0; Num < Amount; Num++)
 	{
-		if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ItemRow.Class, PawnLocation + GetPawn()->GetActorUpVector() * Num * 25.0f, PawnRotator))
+		PawnLocation.Z += Num * 25.0f;
+		if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ItemRow.Class, PawnLocation, PawnRotator))
 		{
 			ItemActor->Initialize(ItemRow);
 		}

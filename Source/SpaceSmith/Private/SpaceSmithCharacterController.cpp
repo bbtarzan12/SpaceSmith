@@ -101,6 +101,14 @@ void ASpaceSmithCharacterController::Deselect()
 	Widget->KeyInformation->Clear();
 }
 
+void ASpaceSmithCharacterController::Fire()
+{
+	if (CurrentSelectedQuickSlot)
+	{
+		
+	}
+}
+
 void ASpaceSmithCharacterController::OnAddItem(ABaseItem* AddingItem)
 {
 	ReloadInventory();

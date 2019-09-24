@@ -42,6 +42,8 @@ private:
 
 	void TraceObject();
 	void HoldItem(float DeltaTime);
+
+	void OnFire(); //Left Click
 	void OnHold(); //G
 	void OnAction(); //F
 	void OnInteract(); //E
@@ -72,9 +74,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	class ASpaceSmithCharacterController* CharacterController;
 
-	UPROPERTY(VisibleAnywhere, Category = Mesh)
-	class UStaticMeshComponent* EquipMesh;
-
 	UPROPERTY(EditAnywhere, Category = "Select")
 	float HoldingDistance;
 
@@ -89,6 +88,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Pick")
 	FHitResult CurrentSelectableHitResult;
+
+	UPROPERTY(VisibleAnywhere, Category = "Slot")
+	class ABaseItem* SlotItem;
 
 protected:
 

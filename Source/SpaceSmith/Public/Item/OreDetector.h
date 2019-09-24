@@ -13,5 +13,29 @@ UCLASS()
 class SPACESMITH_API AOreDetector : public ABaseItem
 {
 	GENERATED_BODY()
+
+public:
+	AOreDetector();
+
+	virtual void Fire() override;
+	virtual void Tick(float DeltaTime) override;
+	
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	void StartFire();
+	void EndFire();
+
+private:
+	bool bFire;
+	float ScanAmount;
+
+
+	UPROPERTY()
+	class UMaterialParameterCollectionInstance* ScanParameter;
+	
+	UPROPERTY()
+	class UMaterialParameterCollection* ScanParameterCollection;
 	
 };

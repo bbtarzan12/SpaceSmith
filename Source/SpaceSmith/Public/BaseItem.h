@@ -29,8 +29,11 @@ public:
 	// Sets default values for this actor's properties
 	ABaseItem();
 
+	void Initialize(FItemRow Item);
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void Fire();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool PickUp(AActor* Actor);
@@ -60,11 +63,11 @@ public:
 	FText GetInteractInformationText();
 	virtual FText GetInteractInformationText_Implementation() override;
 
-	void Initialize(FItemRow Item);
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	bool CanFire() const;
 
 public:
 	FItemRow Data;
@@ -87,5 +90,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	EItemState State;
+
+	UPROPERTY(VisibleAnywhere)
+	float LastUsedTime;
 
 };

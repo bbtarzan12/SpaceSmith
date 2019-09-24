@@ -29,6 +29,13 @@ void ABaseItem::BeginPlay()
 	{
 		Initialize(*Row);
 	}
+
+	LastUsedTime = GetWorld()->GetTimeSeconds();
+}
+
+bool ABaseItem::CanFire() const
+{
+	return Data.bFire && (GetWorld()->GetTimeSeconds() - LastUsedTime) > Data.CoolTime;
 }
 
 FText ABaseItem::GetPickInformationText_Implementation()
@@ -60,6 +67,11 @@ void ABaseItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ABaseItem::Fire()
+{
+	LastUsedTime = GetWorld()->GetTimeSeconds();
 }
 
 bool ABaseItem::PickUp_Implementation(AActor* Actor)

@@ -23,6 +23,7 @@ public:
 
 	void Select(AActor* Actor);
 	void Deselect();
+	void Fire();
 
 	void ReloadInventory();
 	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);

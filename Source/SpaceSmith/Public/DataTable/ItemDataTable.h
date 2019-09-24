@@ -36,6 +36,12 @@ public:
 	bool bStack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bFire;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = bFire))
+	float CoolTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Description;
 
 	bool operator==(const FItemRow& OtherItem) const;

@@ -35,9 +35,6 @@ ASpaceSmithCharacter::ASpaceSmithCharacter()
 	HoldingPhysicsJoint->SetupAttachment(HoldingSlot);
 
 	GetMesh()->SetupAttachment(FirstPersonCameraComponent);
-
-	EquipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EquipmentMesh"));
-	EquipMesh->SetupAttachment(GetMesh(), TEXT("AttachPoint"));
 }
 
 void ASpaceSmithCharacter::BeginPlay()
@@ -177,6 +174,20 @@ void ASpaceSmithCharacter::HoldItem(float DeltaTime)
 	CharacterController->Select(Cast<AActor>(HoldingPickable.GetObject()));
 }
 
+void ASpaceSmithCharacter::OnFire()
+{
+	if (CharacterController->GetInventoryVisible())
+		return;
+
+	if (CharacterController->GetViewportWidgetVisible())
+		return;
+
+	if (SlotItem)
+	{
+		SlotItem->Fire();
+	}
+}
+
 void ASpaceSmithCharacter::OnHold()
 {
 	if (CharacterController->GetInventoryVisible())
@@ -242,11 +253,22 @@ void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
 	if (CharacterController->GetViewportWidgetVisible())
 		return;
 
-	EquipMesh->SetStaticMesh(nullptr);
+
+	if (SlotItem)
+	{
+		SlotItem->Destroy();
+	}
 
 	if (Slot)
 	{
-		EquipMesh->SetStaticMesh(Slot->Row.Mesh);
+		SlotItem = GetWorld()->SpawnActor<ABaseItem>(Slot->Row.Class, GetActorLocation(), GetActorRotation());
+		if (SlotItem)
+		{
+			SlotItem->Initialize(Slot->Row);
+			SlotItem->SetActorEnableCollision(false);
+			SlotItem->DisableComponentsSimulatePhysics();
+			SlotItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale,TEXT("AttachPoint"));
+		}
 	}
 }
 
@@ -322,6 +344,7 @@ void ASpaceSmithCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAxis("Turn", this, &ASpaceSmithCharacter::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &ASpaceSmithCharacter::AddControllerPitchInput);
 
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASpaceSmithCharacter::OnFire);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpaceSmithCharacter::OnInteract);
 	PlayerInputComponent->BindAction("Action", IE_Pressed, this, &ASpaceSmithCharacter::OnAction);
 	PlayerInputComponent->BindAction("Hold", IE_Pressed, this, &ASpaceSmithCharacter::OnHold);

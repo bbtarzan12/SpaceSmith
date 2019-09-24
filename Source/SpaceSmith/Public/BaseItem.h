@@ -30,10 +30,12 @@ public:
 	ABaseItem();
 
 	void Initialize(FItemRow Item);
+	void SetOwnerController(ASpaceSmithCharacterController* Controller);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void Fire();
+	virtual void FireEnd();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool PickUp(AActor* Actor);
@@ -78,6 +80,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	FDataTableRowHandle DataTableHandle;
+
+	UPROPERTY(VisibleAnywhere)
+	ASpaceSmithCharacterController* OwnerController;
 
 	UPROPERTY(VisibleAnywhere)
 	AActor* HoldingActor;

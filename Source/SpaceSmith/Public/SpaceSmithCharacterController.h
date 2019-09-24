@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "DataTable/ItemDataTable.h"
+#include "SpaceSmithCharacter.h"
 #include "SpaceSmithCharacterController.generated.h"
 
 class ABaseItem;
@@ -23,7 +24,6 @@ public:
 
 	void Select(AActor* Actor);
 	void Deselect();
-	void Fire();
 
 	void ReloadInventory();
 	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);
@@ -39,6 +39,7 @@ public:
 
 	FORCEINLINE bool GetInventoryVisible() const { return bInventoryVisible; }
 	FORCEINLINE bool GetViewportWidgetVisible() const { return bViewportWidgetVisible; }
+	FORCEINLINE UCameraComponent* GetPawnCameraComponent() const{ if (ASpaceSmithCharacter* SpaceCharacter = Cast<ASpaceSmithCharacter>(GetPawn())) { return SpaceCharacter->GetCameraController(); } else { return nullptr; } }
 
 	UInventorySlot* SelectSlot(int32 SlotIndex);
 

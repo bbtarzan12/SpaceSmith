@@ -62,6 +62,11 @@ void ABaseItem::Initialize(FItemRow Item)
 	Mesh->SetStaticMesh(Item.Mesh);
 }
 
+void ABaseItem::SetOwnerController(ASpaceSmithCharacterController* Controller)
+{
+	OwnerController = Controller;
+}
+
 // Called every frame
 void ABaseItem::Tick(float DeltaTime)
 {
@@ -72,6 +77,11 @@ void ABaseItem::Tick(float DeltaTime)
 void ABaseItem::Fire()
 {
 	LastUsedTime = GetWorld()->GetTimeSeconds();
+}
+
+void ABaseItem::FireEnd()
+{
+
 }
 
 bool ABaseItem::PickUp_Implementation(AActor* Actor)

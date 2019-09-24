@@ -12,6 +12,7 @@ class ABaseItem;
 class UInventorySlot;
 class IPick;
 class ISelect;
+class UCameraComponent;
 
 UCLASS(config=Game)
 class ASpaceSmithCharacter : public ACharacter
@@ -31,6 +32,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Select")
 	FORCEINLINE bool HasSelectedItem() const { return Selectable.GetObject() != nullptr; }
 
+	FORCEINLINE UCameraComponent* GetCameraController() const { return FirstPersonCameraComponent; }
+
 	virtual void AddControllerYawInput(float Val) override;
 	virtual void AddControllerPitchInput(float Val) override;
 
@@ -44,6 +47,7 @@ private:
 	void HoldItem(float DeltaTime);
 
 	void OnFire(); //Left Click
+	void OnFireEnd();
 	void OnHold(); //G
 	void OnAction(); //F
 	void OnInteract(); //E

@@ -101,16 +101,9 @@ void ASpaceSmithCharacterController::Deselect()
 	Widget->KeyInformation->Clear();
 }
 
-void ASpaceSmithCharacterController::Fire()
-{
-	if (CurrentSelectedQuickSlot)
-	{
-		
-	}
-}
-
 void ASpaceSmithCharacterController::OnAddItem(ABaseItem* AddingItem)
 {
+	AddingItem->SetOwnerController(this);
 	ReloadInventory();
 }
 
@@ -131,6 +124,7 @@ void ASpaceSmithCharacterController::OnDropItem(UInventorySlot* Slot, FItemRow I
 		if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ItemRow.Class, PawnLocation, PawnRotator))
 		{
 			ItemActor->Initialize(ItemRow);
+			ItemActor->SetOwnerController(nullptr);
 		}
 	}
 
@@ -139,7 +133,6 @@ void ASpaceSmithCharacterController::OnDropItem(UInventorySlot* Slot, FItemRow I
 		ASpaceSmithCharacter* SmithCharacter = Cast<ASpaceSmithCharacter>(GetPawn());
 		SmithCharacter->Slot(CurrentSelectedQuickSlot);
 	}
-
 	ReloadInventory();
 }
 

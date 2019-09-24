@@ -112,7 +112,6 @@ void ASpaceSmithCharacter::TraceObject()
 	FCollisionQueryParams CQP;
 	CQP.AddIgnoredActor(this);
 
-
 	if (GetWorld()->LineTraceSingleByChannel(CurrentSelectableHitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
 	{
 		if (CurrentSelectableHitResult.GetActor()->GetClass()->ImplementsInterface(USelect::StaticClass()))
@@ -188,6 +187,14 @@ void ASpaceSmithCharacter::OnFire()
 	}
 }
 
+void ASpaceSmithCharacter::OnFireEnd()
+{
+	if (SlotItem)
+	{
+		SlotItem->FireEnd();
+	}
+}
+
 void ASpaceSmithCharacter::OnHold()
 {
 	if (CharacterController->GetInventoryVisible())
@@ -249,6 +256,7 @@ void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
 {
 	if (SlotItem)
 	{
+		SlotItem->FireEnd();
 		SlotItem->Destroy();
 	}
 
@@ -258,6 +266,7 @@ void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
 		if (SlotItem)
 		{
 			SlotItem->Initialize(Slot->Row);
+			SlotItem->SetOwnerController(CharacterController);
 			SlotItem->SetActorEnableCollision(false);
 			SlotItem->DisableComponentsSimulatePhysics();
 			SlotItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale,TEXT("AttachPoint"));
@@ -338,6 +347,7 @@ void ASpaceSmithCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAxis("LookUp", this, &ASpaceSmithCharacter::AddControllerPitchInput);
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASpaceSmithCharacter::OnFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASpaceSmithCharacter::OnFireEnd);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpaceSmithCharacter::OnInteract);
 	PlayerInputComponent->BindAction("Action", IE_Pressed, this, &ASpaceSmithCharacter::OnAction);
 	PlayerInputComponent->BindAction("Hold", IE_Pressed, this, &ASpaceSmithCharacter::OnHold);

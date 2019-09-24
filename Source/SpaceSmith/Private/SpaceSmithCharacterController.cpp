@@ -117,7 +117,7 @@ void ASpaceSmithCharacterController::OnDropItem(UInventorySlot* Slot, FItemRow I
 
 	for (int32 Num = 0; Num < Amount; Num++)
 	{
-		if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ABaseItem::StaticClass(), PawnLocation + GetPawn()->GetActorUpVector() * Num * 25.0f, PawnRotator))
+		if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ItemRow.Class, PawnLocation + GetPawn()->GetActorUpVector() * Num * 25.0f, PawnRotator))
 		{
 			ItemActor->Initialize(ItemRow);
 		}

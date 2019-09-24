@@ -7,6 +7,8 @@
 #include <Engine/DataTable.h>
 #include "ItemDataTable.generated.h"
 
+class ABaseItem;
+
 USTRUCT(BlueprintType)
 struct FItemRow : public FTableRowBase
 {
@@ -26,6 +28,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMesh* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ABaseItem> Class;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bStack;

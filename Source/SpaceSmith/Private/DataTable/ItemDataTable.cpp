@@ -2,6 +2,7 @@
 
 
 #include "ItemDataTable.h"
+#include "BaseItem.h"
 
 
 bool FItemRow::operator==(const FItemRow& Other) const
@@ -13,4 +14,6 @@ FItemRow::FItemRow()
 {
 	this->Name = FText::FromString("No Name");
 	this->Description = FText::FromString("No Description");
+	this->bStack = false;
+	this->Class = ABaseItem::StaticClass();
 }

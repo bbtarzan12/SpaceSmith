@@ -247,13 +247,6 @@ void ASpaceSmithCharacter::OnInventory()
 
 void ASpaceSmithCharacter::Slot(UInventorySlot* Slot)
 {
-	if (CharacterController->GetInventoryVisible())
-		return;
-
-	if (CharacterController->GetViewportWidgetVisible())
-		return;
-
-
 	if (SlotItem)
 	{
 		SlotItem->Destroy();

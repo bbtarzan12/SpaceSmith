@@ -7,7 +7,7 @@
 
 AOreDetector::AOreDetector() : Super()
 {
-	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> ScanParameterFinder(TEXT("MaterialParameterCollection'/Game/SpaceSmith/Materials/PostProcess/ScanParameter'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> ScanParameterFinder(TEXT("MaterialParameterCollection'/Game/SpaceSmith/Materials/PostProcess/MPC_ScanFX'"));
 	if (ScanParameterFinder.Succeeded())
 	{
 		ScanParameterCollection = ScanParameterFinder.Object;

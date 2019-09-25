@@ -82,7 +82,7 @@ protected:
 	FDataTableRowHandle DataTableHandle;
 
 	UPROPERTY(VisibleAnywhere)
-	ASpaceSmithCharacterController* OwnerController;
+	class ASpaceSmithCharacterController* OwnerController;
 
 	UPROPERTY(VisibleAnywhere)
 	AActor* HoldingActor;

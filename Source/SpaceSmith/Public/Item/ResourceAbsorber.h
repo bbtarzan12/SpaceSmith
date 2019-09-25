@@ -34,7 +34,7 @@ private:
 	float Falloff;
 
 	UPROPERTY()
-	AActor* TargetActor;
+	class ABaseResource* TargetResource;
 
 	UPROPERTY()
 	class USceneComponent* AbsorbeLocation;

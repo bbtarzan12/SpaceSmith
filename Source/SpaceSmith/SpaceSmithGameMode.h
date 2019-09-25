@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "ResourceDataTable.h"
 #include "SpaceSmithGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -15,7 +16,14 @@ public:
 	ASpaceSmithGameMode();
 
 public:
+	UPROPERTY()
 	class UDataTable* ItemDataTable;
+
+	UPROPERTY()
+	class UDataTable* ResourceDataTable;
+
+	UPROPERTY()
+	TMap<FString, FResourceRow> ResourceMap;
 };
 
 

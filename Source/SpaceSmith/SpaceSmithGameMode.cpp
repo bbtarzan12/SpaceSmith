@@ -17,9 +17,26 @@ ASpaceSmithGameMode::ASpaceSmithGameMode()
 	// use our custom HUD class
 	HUDClass = ASpaceSmithHUD::StaticClass();
 
-	static ConstructorHelpers::FObjectFinder<UDataTable> ItemDataTableFinder(TEXT("DataTable'/Game/SpaceSmith/Data/DataTable/ItemDataTable'"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> ItemDataTableFinder(TEXT("DataTable'/Game/SpaceSmith/Data/DataTable/DT_Item'"));
 	if (ItemDataTableFinder.Succeeded())
 	{
 		ItemDataTable = ItemDataTableFinder.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> ResourceDataTableFinder(TEXT("DataTable'/Game/SpaceSmith/Data/DataTable/DT_Resource'"));
+	if (ResourceDataTableFinder.Succeeded())
+	{
+		ResourceDataTable = ResourceDataTableFinder.Object;
+
+		TArray<FResourceRow*> Rows;
+		ResourceDataTable->GetAllRows<FResourceRow>(TEXT("Can not find ResourceRows"), Rows);
+
+		for (auto & Row : Rows)
+		{
+			if (Row)
+			{
+				ResourceMap.Emplace(Row->Mesh->GetName(), *Row);
+			}
+		}
 	}
 }

@@ -33,6 +33,17 @@ void ABaseItem::BeginPlay()
 	LastUsedTime = GetWorld()->GetTimeSeconds();
 }
 
+void ABaseItem::Initialize(FItemRow Item)
+{
+	Data = Item;
+	Mesh->SetStaticMesh(Item.Mesh);
+}
+
+void ABaseItem::SetOwnerController(ASpaceSmithCharacterController* Controller)
+{
+	OwnerController = Controller;
+}
+
 bool ABaseItem::CanFire() const
 {
 	return Data.bFire && (GetWorld()->GetTimeSeconds() - LastUsedTime) > Data.CoolTime;
@@ -54,17 +65,6 @@ FText ABaseItem::GetPickInformationText_Implementation()
 FText ABaseItem::GetInteractInformationText_Implementation()
 {
 	return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Interact_Item")));
-}
-
-void ABaseItem::Initialize(FItemRow Item)
-{
-	Data = Item;
-	Mesh->SetStaticMesh(Item.Mesh);
-}
-
-void ABaseItem::SetOwnerController(ASpaceSmithCharacterController* Controller)
-{
-	OwnerController = Controller;
 }
 
 // Called every frame

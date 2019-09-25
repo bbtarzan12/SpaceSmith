@@ -6,6 +6,9 @@
 #include <Materials/MaterialParameterCollectionInstance.h>
 #include <Camera/CameraComponent.h>
 #include "SpaceSmithCharacterController.h"
+#include <Foliage/Public/FoliageInstancedStaticMeshComponent.h>
+#include "SpaceSmithGameMode.h"
+#include "Resource/BaseResource.h"
 
 AResourceAbsorber::AResourceAbsorber() : Super()
 {
@@ -40,7 +43,7 @@ void AResourceAbsorber::Fire()
 
 	bFire = true;
 	FireTime = 0;
-	TargetActor = nullptr;
+	TargetResource = nullptr;
 }
 
 void AResourceAbsorber::FireEnd()
@@ -61,8 +64,9 @@ void AResourceAbsorber::Tick(float DeltaTime)
 
 	if (FireTime >= 3.0f)
 	{
-		TargetActor->Destroy();
-		TargetActor = nullptr;
+		TargetResource->Absorb(OwnerController);
+		TargetResource->Destroy();
+		TargetResource = nullptr;
 		FireTime = 0;
 		ResetParameter();
 		return;
@@ -70,7 +74,7 @@ void AResourceAbsorber::Tick(float DeltaTime)
 
 	if (FireTime >= 2.0f)
 	{
-		if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(TargetActor->GetRootComponent()))
+		if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(TargetResource->GetRootComponent()))
 		{
 			for (int32 Index = 0; Index < MeshComponent->GetNumMaterials(); Index++)
 			{
@@ -99,39 +103,57 @@ void AResourceAbsorber::Tick(float DeltaTime)
 
 		if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
 		{
-			if (HitResult.GetActor()->GetName().Contains(TEXT("Test")))
+			if (UFoliageInstancedStaticMeshComponent* FoliageComponent = Cast<UFoliageInstancedStaticMeshComponent>(HitResult.GetComponent()))
 			{
-				if (TargetActor)
+				FTransform FoliageTransform;
+				FoliageComponent->GetInstanceTransform(HitResult.Item, FoliageTransform, true);
+				FoliageComponent->RemoveInstance(HitResult.Item);
+
+				const TMap<FString, FResourceRow>& ResourceMap = Cast<ASpaceSmithGameMode>(GetWorld()->GetAuthGameMode())->ResourceMap;
+
+				if (ResourceMap.Contains(FoliageComponent->GetStaticMesh()->GetName()))
 				{
-					if (TargetActor == HitResult.GetActor())
+					FResourceRow ResourceRow = ResourceMap[FoliageComponent->GetStaticMesh()->GetName()];
+					if (ABaseResource* Resource = GetWorld()->SpawnActor<ABaseResource>(ResourceRow.Class, FoliageTransform))
+					{
+						Resource->Initialize(ResourceRow);
+					}
+				}
+			}
+
+			if (ABaseResource* Resource = Cast<ABaseResource>(HitResult.GetActor()))
+			{
+				if (TargetResource)
+				{
+					if (TargetResource == HitResult.GetActor())
 					{
 						GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("%f"), FireTime));
 						FireTime += DeltaTime;
 					}
 					else
 					{
-						TargetActor = HitResult.GetActor();
+						TargetResource = Resource;
 						FireTime = 0;
 						ResetParameter();
 					}
 				}
 				else
 				{
-					TargetActor = HitResult.GetActor();
+					TargetResource = Resource;
 					FireTime = 0;
 					ResetParameter();
 				}
 			}
 			else
 			{
-				TargetActor = nullptr;
+				TargetResource = nullptr;
 				FireTime = 0;
 				ResetParameter();
 			}
 		}
 		else
 		{
-			TargetActor = nullptr;
+			TargetResource = nullptr;
 			FireTime = 0;
 			ResetParameter();
 		}

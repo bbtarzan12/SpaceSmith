@@ -19,7 +19,8 @@ public:
 
 	virtual void Fire() override;
 	virtual void Tick(float DeltaTime) override;
-	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 protected:
 	virtual void BeginPlay() override;
 

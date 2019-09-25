@@ -20,6 +20,12 @@ void AOreDetector::BeginPlay()
 	ScanParameter = GetWorld()->GetParameterCollectionInstance(ScanParameterCollection);
 }
 
+void AOreDetector::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	EndFire();
+	Super::EndPlay(EndPlayReason);
+}
+
 void AOreDetector::Fire()
 {
 	if (!CanFire())
@@ -57,6 +63,7 @@ void AOreDetector::Tick(float DeltaTime)
 void AOreDetector::EndFire()
 {
 	LastUsedTime = GetWorld()->GetTimeSeconds();
-	ScanParameter->SetScalarParameterValue(TEXT("Blend"), 0);
 	bFire = false;
+	if(ScanParameter)
+		ScanParameter->SetScalarParameterValue(TEXT("Blend"), 0);
 }

@@ -4,6 +4,8 @@
 #include "BaseResource.h"
 #include "BaseItem.h"
 #include "ItemDataTable.h"
+#include "ResourceOnDetectPopUpWidget.h"
+#include <WidgetComponent.h>
 
 // Sets default values
 ABaseResource::ABaseResource()
@@ -12,6 +14,16 @@ ABaseResource::ABaseResource()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
+
+	DetectorWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Detector Widget Component"));
+	DetectorWidgetComponent->SetupAttachment(RootComponent);
+
+	static ConstructorHelpers::FClassFinder<UResourceOnDetectPopUpWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/Resource/WBP_ResourceOnDetectPopUp'"));
+	if (WidgetAsset.Succeeded())
+	{
+		WidgetClass = WidgetAsset.Class;
+	}
+
 	RootComponent = Mesh;
 }
 
@@ -19,6 +31,40 @@ ABaseResource::ABaseResource()
 void ABaseResource::BeginPlay()
 {
 	Super::BeginPlay();
+
+	DetectorWidget = CreateWidget<UResourceOnDetectPopUpWidget>(GetWorld(), WidgetClass);
+	DetectorWidget->Resource = this;
+	DetectorWidgetComponent->SetWidget(DetectorWidget);
+	DetectorWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	DetectorWidgetComponent->SetDrawAtDesiredSize(true);
+	DetectorWidgetComponent->SetWorldLocation(GetActorLocation());
+}
+
+// Called every frame
+void ABaseResource::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (bDetect)
+	{
+		float CurrentTime = GetWorld()->GetTimeSeconds();
+
+		if (CurrentTime - DetectTime >= 5.0f)
+		{
+			bDetect = false;
+			DetectorWidget->OnEndDetect();
+		}
+	}
+}
+
+void ABaseResource::OnDetect()
+{
+	DetectTime = GetWorld()->GetTimeSeconds();
+	if (!bDetect)
+	{
+		bDetect = true;
+		DetectorWidget->OnInitDetect();
+	}
 }
 
 void ABaseResource::Initialize(FResourceRow Resource)
@@ -30,12 +76,6 @@ void ABaseResource::Initialize(FResourceRow Resource)
 void ABaseResource::SetCollisionProfile(FName ProfileName)
 {
 	Mesh->SetCollisionProfileName(ProfileName);
-}
-
-// Called every frame
-void ABaseResource::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 void ABaseResource::AbsorbStart()

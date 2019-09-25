@@ -4,7 +4,7 @@
 #include "KeyInformationEntry.h"
 #include "Public/Widget/KeyInformationWidget.h"
 
-void UKeyInformationEntry::SetListItemObjectInternal(UObject* InObject)
+void UKeyInformationEntry::NativeOnListItemObjectSet(UObject* InObject)
 {
 	if (UKeyInformation* NewInformation = Cast<UKeyInformation>(InObject))
 	{

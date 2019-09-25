@@ -17,7 +17,7 @@ class SPACESMITH_API UPlayerInventoryEntry : public UUserWidget, public IUserObj
 	
 	
 protected:
-	virtual void SetListItemObjectInternal(UObject* InObject) override;
+	virtual void NativeOnListItemObjectSet(UObject* InObject) override;
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 

@@ -6,7 +6,7 @@
 #include <WidgetBlueprintLibrary.h>
 #include "Public/Component/InventoryComponent.h"
 
-void UPlayerInventoryEntry::SetListItemObjectInternal(UObject* InObject)
+void UPlayerInventoryEntry::NativeOnListItemObjectSet(UObject* InObject)
 {
 	ItemSlot = Cast<UInventorySlot>(InObject);
 }

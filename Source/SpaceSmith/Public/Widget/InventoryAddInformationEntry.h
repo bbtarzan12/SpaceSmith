@@ -16,7 +16,7 @@ class SPACESMITH_API UInventoryAddInformationEntry : public UUserWidget, public 
 	GENERATED_BODY()
 	
 public:
-	virtual void SetListItemObjectInternal(UObject* InObject) override;
+	virtual void NativeOnListItemObjectSet(UObject* InObject) override;
 
 private:
 	UPROPERTY(meta = (BindWidget))

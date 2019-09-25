@@ -4,7 +4,7 @@
 #include "InventoryAddInformationEntry.h"
 #include "InventoryAddInformationWidget.h"
 
-void UInventoryAddInformationEntry::SetListItemObjectInternal(UObject* InObject)
+void UInventoryAddInformationEntry::NativeOnListItemObjectSet(UObject* InObject)
 {
 	if (UInventoryAddInformation* NewInformation = Cast<UInventoryAddInformation>(InObject))
 	{

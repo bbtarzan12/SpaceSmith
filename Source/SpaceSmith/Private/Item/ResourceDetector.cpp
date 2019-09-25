@@ -4,6 +4,12 @@
 #include "ResourceDetector.h"
 #include <Materials/MaterialParameterCollection.h>
 #include <Materials/MaterialParameterCollectionInstance.h>
+#include <Kismet/KismetSystemLibrary.h>
+#include <EngineUtils.h>
+#include <InstancedFoliageActor.h>
+#include "SpaceSmithGameMode.h"
+#include "BaseResource.h"
+#include "ResourceDataTable.h"
 
 AResourceDetector::AResourceDetector() : Super()
 {
@@ -42,6 +48,55 @@ void AResourceDetector::StartFire()
 	ScanParameter->SetVectorParameterValue(TEXT("CenterLocation"), GetActorLocation());
 	bFire = true;
 	ScanAmount = 0;
+
+	TArray<UActorComponent*> InstancedStaticMeshComponents;
+	for (const auto& Foliage : TActorRange<AInstancedFoliageActor>(GetWorld()))
+	{
+		InstancedStaticMeshComponents = Foliage->GetComponentsByClass(UInstancedStaticMeshComponent::StaticClass());
+	}
+
+	for (auto & InstancedStaticMeshComponent : InstancedStaticMeshComponents)
+	{
+		if (UInstancedStaticMeshComponent* InstancedComponent = Cast<UInstancedStaticMeshComponent>(InstancedStaticMeshComponent))
+		{
+			TArray<int32> Indices = InstancedComponent->GetInstancesOverlappingSphere(GetActorLocation(), 5000, true);
+			for (auto& Index : Indices)
+			{
+				FTransform FoliageTransform;
+				InstancedComponent->GetInstanceTransform(Index, FoliageTransform, true);
+				InstancedComponent->RemoveInstance(Index);
+
+				const TMap<FString, FResourceRow>& ResourceMap = Cast<ASpaceSmithGameMode>(GetWorld()->GetAuthGameMode())->ResourceMap;
+
+				if (ResourceMap.Contains(InstancedComponent->GetStaticMesh()->GetName()))
+				{
+					FResourceRow ResourceRow = ResourceMap[InstancedComponent->GetStaticMesh()->GetName()];
+					if (ABaseResource* Resource = GetWorld()->SpawnActor<ABaseResource>(ResourceRow.Class, FoliageTransform))
+					{
+						Resource->Initialize(ResourceRow);
+						Resource->SetCollisionProfile(InstancedComponent->GetCollisionProfileName());
+						Resource->OnDetect();
+					}
+				}
+			}
+		}
+	}
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+	TArray<AActor*> IgnoreActors;
+	TArray<AActor*> OutActors;
+	if (UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 5000, ObjectTypes, ABaseResource::StaticClass(), IgnoreActors, OutActors))
+	{
+		for (auto& OutActor : OutActors)
+		{
+			if (ABaseResource* Resource = Cast<ABaseResource>(OutActor))
+			{
+				Resource->OnDetect();
+			}
+		}
+	}
 }
 
 void AResourceDetector::Tick(float DeltaTime)

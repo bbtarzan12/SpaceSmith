@@ -22,7 +22,7 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
+	virtual void OnDetect();
 	virtual void AbsorbStart();
 	virtual void Absorb(ASpaceSmithCharacterController* Controller);
 
@@ -33,9 +33,24 @@ protected:
 public:
 	FResourceRow Data;
 
+
 protected:
 	UPROPERTY(VisibleDefaultsOnly)
 	class UStaticMeshComponent* Mesh;
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* DetectorWidgetComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UResourceOnDetectPopUpWidget* DetectorWidget;
+
+	TSubclassOf<class UUserWidget> WidgetClass;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bDetect;
+
+	UPROPERTY(VisibleAnywhere)
+	float DetectTime;
 
 
 

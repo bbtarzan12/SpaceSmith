@@ -71,32 +71,34 @@ void AResourceAbsorber::Tick(float DeltaTime)
 	if (!OwnerController)
 		return;
 
-	if (FireTime >= 3.0f)
+	if (TargetResource)
 	{
-		TargetResource->Absorb(OwnerController);
-		TargetResource->Destroy();
-		TargetResource = nullptr;
-		FireTime = 0;
-		ResetParameter();
-		return;
-	}
-
-	if (FireTime >= 2.0f)
-	{
-		if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(TargetResource->GetRootComponent()))
+		if (FireTime >= TargetResource->Data.AbsorbTime + 1)
 		{
-			for (int32 Index = 0; Index < MeshComponent->GetNumMaterials(); Index++)
-			{
-				MeshComponent->SetMaterial(Index, WormHoleMaterialDynamic);
-			}
+			TargetResource->Absorb(OwnerController);
+			TargetResource = nullptr;
+			FireTime = 0;
+			ResetParameter();
+			return;
 		}
-		Falloff += DeltaTime * 10.0f;
-		Radius += DeltaTime * 5000.0f;
-		WormHoleParameter->SetScalarParameterValue(TEXT("VertCrushRadius"), Radius);
-		WormHoleParameter->SetScalarParameterValue(TEXT("VertCrushFalloff"), Falloff);
-		WormHoleParameter->SetVectorParameterValue(TEXT("CenterLocation"), AbsorbeLocation->GetComponentLocation());
-		FireTime += DeltaTime;
-		return;
+
+		if (FireTime >= TargetResource->Data.AbsorbTime)
+		{
+			if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(TargetResource->GetRootComponent()))
+			{
+				for (int32 Index = 0; Index < MeshComponent->GetNumMaterials(); Index++)
+				{
+					MeshComponent->SetMaterial(Index, WormHoleMaterialDynamic);
+				}
+			}
+			Falloff += DeltaTime * 10.0f;
+			Radius += DeltaTime * 5000.0f;
+			WormHoleParameter->SetScalarParameterValue(TEXT("VertCrushRadius"), Radius);
+			WormHoleParameter->SetScalarParameterValue(TEXT("VertCrushFalloff"), Falloff);
+			WormHoleParameter->SetVectorParameterValue(TEXT("CenterLocation"), AbsorbeLocation->GetComponentLocation());
+			FireTime += DeltaTime;
+			return;
+		}
 	}
 
 	if (bFire)
@@ -110,7 +112,7 @@ void AResourceAbsorber::Tick(float DeltaTime)
 		CQP.AddIgnoredActor(OwnerController->GetPawn());
 		FHitResult HitResult;
 
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Camera, CQP))
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, CQP))
 		{
 			if (UFoliageInstancedStaticMeshComponent* FoliageComponent = Cast<UFoliageInstancedStaticMeshComponent>(HitResult.GetComponent()))
 			{
@@ -126,6 +128,7 @@ void AResourceAbsorber::Tick(float DeltaTime)
 					if (ABaseResource* Resource = GetWorld()->SpawnActor<ABaseResource>(ResourceRow.Class, FoliageTransform))
 					{
 						Resource->Initialize(ResourceRow);
+						Resource->SetCollisionProfile(FoliageComponent->GetCollisionProfileName());
 					}
 				}
 			}
@@ -138,6 +141,11 @@ void AResourceAbsorber::Tick(float DeltaTime)
 					{
 						GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("%f"), FireTime));
 						FireTime += DeltaTime;
+
+						if (FireTime >= TargetResource->Data.AbsorbTime)
+						{
+							TargetResource->AbsorbStart();
+						}
 					}
 					else
 					{

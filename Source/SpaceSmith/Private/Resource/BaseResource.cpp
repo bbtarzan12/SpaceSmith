@@ -27,11 +27,20 @@ void ABaseResource::Initialize(FResourceRow Resource)
 	Mesh->SetStaticMesh(Resource.Mesh);
 }
 
+void ABaseResource::SetCollisionProfile(FName ProfileName)
+{
+	Mesh->SetCollisionProfileName(ProfileName);
+}
+
 // Called every frame
 void ABaseResource::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
 
+void ABaseResource::AbsorbStart()
+{
+	SetActorEnableCollision(false);
 }
 
 void ABaseResource::Absorb(ASpaceSmithCharacterController* Controller)
@@ -50,5 +59,7 @@ void ABaseResource::Absorb(ASpaceSmithCharacterController* Controller)
 			}
 		}
 	}
+
+	Destroy();
 }
 

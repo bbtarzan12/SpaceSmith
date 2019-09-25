@@ -18,10 +18,12 @@ public:
 	ABaseResource();
 
 	void Initialize(FResourceRow Resource);
+	void SetCollisionProfile(FName ProfileName);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void AbsorbStart();
 	virtual void Absorb(ASpaceSmithCharacterController* Controller);
 
 protected:

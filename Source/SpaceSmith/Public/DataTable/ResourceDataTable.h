@@ -41,6 +41,9 @@ public:
 	TSubclassOf<ABaseResource> Class;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AbsorbTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FResourceAbsorbInformation AbsorbInformation;
 };
 

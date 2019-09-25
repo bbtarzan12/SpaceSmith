@@ -16,5 +16,8 @@ class SPACESMITH_API USpaceSmithCheatManager : public UCheatManager
 	
 	UFUNCTION(exec)
 	void SpawnItem(FName Name);
+
+	UFUNCTION(exec)
+	void SpawnItemWithNum(FName Name, int32 Num);
 	
 };

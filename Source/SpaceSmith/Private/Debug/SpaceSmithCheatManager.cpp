@@ -8,6 +8,11 @@
 
 void USpaceSmithCheatManager::SpawnItem(FName Name)
 {
+	SpawnItemWithNum(Name, 1);
+}
+
+void USpaceSmithCheatManager::SpawnItemWithNum(FName Name, int32 NumItem)
+{
 	if (!GetWorld())
 		return;
 
@@ -17,9 +22,14 @@ void USpaceSmithCheatManager::SpawnItem(FName Name)
 		{
 			FVector Location = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
 			FRotator Rotation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorRotation();
-			if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ItemRow->Class, Location, Rotation))
+
+			for (int32 Num = 0; Num < NumItem; Num++)
 			{
-				ItemActor->Initialize(*ItemRow);
+				Location.Z += Num * 25.0f;
+				if (ABaseItem* ItemActor = GetWorld()->SpawnActor<ABaseItem>(ItemRow->Class, Location, Rotation))
+				{
+					ItemActor->Initialize(*ItemRow);
+				}
 			}
 		}
 	}

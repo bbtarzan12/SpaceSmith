@@ -46,6 +46,15 @@ void AResourceAbsorber::Fire()
 	TargetResource = nullptr;
 }
 
+void AResourceAbsorber::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (TargetResource && FireTime >= 2.0f)
+	{
+		TargetResource->Absorb(OwnerController);
+		TargetResource->Destroy();
+	}
+}
+
 void AResourceAbsorber::FireEnd()
 {
 	if (!OwnerController)

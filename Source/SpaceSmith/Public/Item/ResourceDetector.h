@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "BaseItem.h"
-#include "OreDetector.generated.h"
+#include "ResourceDetector.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SPACESMITH_API AOreDetector : public ABaseItem
+class SPACESMITH_API AResourceDetector : public ABaseItem
 {
 	GENERATED_BODY()
 
 public:
-	AOreDetector();
+	AResourceDetector();
 
 	virtual void Fire() override;
 	virtual void Tick(float DeltaTime) override;

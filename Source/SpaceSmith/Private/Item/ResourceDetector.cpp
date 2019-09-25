@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "OreDetector.h"
+#include "ResourceDetector.h"
 #include <Materials/MaterialParameterCollection.h>
 #include <Materials/MaterialParameterCollectionInstance.h>
 
-AOreDetector::AOreDetector() : Super()
+AResourceDetector::AResourceDetector() : Super()
 {
 	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> ScanParameterFinder(TEXT("MaterialParameterCollection'/Game/SpaceSmith/Materials/PostProcess/MPC_ScanFX'"));
 	if (ScanParameterFinder.Succeeded())
@@ -14,19 +14,19 @@ AOreDetector::AOreDetector() : Super()
 	}
 }
 
-void AOreDetector::BeginPlay()
+void AResourceDetector::BeginPlay()
 {
 	Super::BeginPlay();
 	ScanParameter = GetWorld()->GetParameterCollectionInstance(ScanParameterCollection);
 }
 
-void AOreDetector::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AResourceDetector::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	EndFire();
 	Super::EndPlay(EndPlayReason);
 }
 
-void AOreDetector::Fire()
+void AResourceDetector::Fire()
 {
 	if (!CanFire())
 		return;
@@ -37,14 +37,14 @@ void AOreDetector::Fire()
 	StartFire();
 }
 
-void AOreDetector::StartFire()
+void AResourceDetector::StartFire()
 {
 	ScanParameter->SetVectorParameterValue(TEXT("CenterLocation"), GetActorLocation());
 	bFire = true;
 	ScanAmount = 0;
 }
 
-void AOreDetector::Tick(float DeltaTime)
+void AResourceDetector::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -60,7 +60,7 @@ void AOreDetector::Tick(float DeltaTime)
 	}
 }
 
-void AOreDetector::EndFire()
+void AResourceDetector::EndFire()
 {
 	LastUsedTime = GetWorld()->GetTimeSeconds();
 	bFire = false;

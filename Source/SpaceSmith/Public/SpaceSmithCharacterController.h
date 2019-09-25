@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "DataTable/ItemDataTable.h"
 #include "SpaceSmithCharacter.h"
+#include "InventoryAddInformationWidget.h"
 #include "SpaceSmithCharacterController.generated.h"
 
 class ABaseItem;
@@ -22,10 +23,13 @@ class SPACESMITH_API ASpaceSmithCharacterController : public APlayerController
 public:
 	ASpaceSmithCharacterController();
 
+	virtual void PlayerTick(float DeltaTime) override;
+
 	void Select(AActor* Actor);
 	void Deselect();
 
 	void ReloadInventory();
+	void ReloadAddInformation();
 	bool AddItemToInventory(ABaseItem* AddingItem, bool Destroy = true);
 	void ToggleInventoryUMG();
 
@@ -86,6 +90,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	UInventorySlot* CurrentSelectedQuickSlot;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<UInventoryAddInformation*> AddInformations;
 
 	
 };

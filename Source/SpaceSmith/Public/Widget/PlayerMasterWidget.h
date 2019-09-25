@@ -20,6 +20,9 @@ public:
 	void SetController(ASpaceSmithCharacterController* NewController);
 
 	UPROPERTY(meta = (BindWidget))
+	class UInventoryAddInformationWidget* InventoryAddInformation;
+
+	UPROPERTY(meta = (BindWidget))
 	class UPlayerInventoryWidget* Inventory;
 
 	UPROPERTY(meta = (BindWidget))

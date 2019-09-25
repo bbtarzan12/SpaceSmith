@@ -17,7 +17,7 @@
 
 ASpaceSmithCharacterController::ASpaceSmithCharacterController()
 {
-	static ConstructorHelpers::FClassFinder<UPlayerMasterWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/PlayerMaster'"));
+	static ConstructorHelpers::FClassFinder<UPlayerMasterWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/WBP_PlayerMaster'"));
 	if (WidgetAsset.Succeeded())
 	{
 		WidgetClass = WidgetAsset.Class;
@@ -63,6 +63,22 @@ void ASpaceSmithCharacterController::BeginPlay()
 	bInventoryVisible = false;
 }
 
+void ASpaceSmithCharacterController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	int32 NumOfAddInformations = AddInformations.Num();
+	AddInformations.RemoveAll([&](const UInventoryAddInformation* AddInformation) 
+	{
+		return CurrentTime - AddInformation->LastAddTime > 2.0f;
+	});
+
+	if (NumOfAddInformations != AddInformations.Num())
+	{
+		ReloadAddInformation();
+	}
+}
+
 void ASpaceSmithCharacterController::Select(AActor* Actor)
 {
 	Widget->KeyInformation->Clear();
@@ -104,6 +120,22 @@ void ASpaceSmithCharacterController::Deselect()
 void ASpaceSmithCharacterController::OnAddItem(ABaseItem* AddingItem)
 {
 	AddingItem->SetOwnerController(this);
+
+	if (UInventoryAddInformation** AddInformation = AddInformations.FindByPredicate([&](UInventoryAddInformation* Information) { return Information->Row == AddingItem->Data; }))
+	{
+		(*AddInformation)->Amount += 1;
+		(*AddInformation)->LastAddTime = GetWorld()->GetTimeSeconds();
+	}
+	else
+	{
+		UInventoryAddInformation* NewInformation = NewObject<UInventoryAddInformation>();
+		NewInformation->Row = AddingItem->Data;
+		NewInformation->Amount = 1;
+		NewInformation->LastAddTime = GetWorld()->GetTimeSeconds();
+		AddInformations.Add(NewInformation);
+	}
+
+	ReloadAddInformation();
 	ReloadInventory();
 }
 
@@ -178,6 +210,17 @@ void ASpaceSmithCharacterController::ReloadInventory()
 	{
 		Widget->QuickBar->Add(Item);
 	}
+}
+
+void ASpaceSmithCharacterController::ReloadAddInformation()
+{
+	Widget->InventoryAddInformation->Clear();
+
+	for (auto & AddInformation : AddInformations)
+	{
+		Widget->InventoryAddInformation->Add(AddInformation);
+	}
+
 }
 
 bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, bool Destroy)

@@ -8,7 +8,7 @@
 
 AStorageChest::AStorageChest() : Super()
 {
-	static ConstructorHelpers::FClassFinder<UStorageInteractWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/StorageInteract'"));
+	static ConstructorHelpers::FClassFinder<UStorageInteractWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/WBP_StorageInteract'"));
 	if (WidgetAsset.Succeeded())
 	{
 		InteractWidgetClass = WidgetAsset.Class;

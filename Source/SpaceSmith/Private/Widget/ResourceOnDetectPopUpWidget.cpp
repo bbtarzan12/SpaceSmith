@@ -5,6 +5,24 @@
 #include "ItemDataTable.h"
 #include "BaseResource.h"
 
+void UResourceOnDetectPopUpWidget::Tick(float DeltaTime)
+{
+	Super::NativeTick(GetCachedGeometry(), DeltaTime);
+}
+
+bool UResourceOnDetectPopUpWidget::IsTickable() const
+{
+	if (Resource)
+		return true;
+	else
+		return false;
+}
+
+TStatId UResourceOnDetectPopUpWidget::GetStatId() const
+{
+	return Super::GetStatID();
+}
+
 UTexture2D* UResourceOnDetectPopUpWidget::GetTexture() const
 {
 	if (Resource)

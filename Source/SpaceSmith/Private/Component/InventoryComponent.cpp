@@ -149,32 +149,54 @@ void UInventoryComponent::RemoveItem(FItemRow Row, int32 Amount)
 {
 	if (Contains(Row, Amount))
 	{
-		if (UInventorySlot* Slot = FindSlot(Row))
+		int32 RemainItems = Amount;
+		while (UInventorySlot* Slot = FindSlot(Row))
 		{
-			RemoveItem(Slot, Amount);
+			if (Slot->Amount < RemainItems)
+			{
+				RemoveItem(Slot, Slot->Amount);
+				RemainItems -= Slot->Amount;
+			}
+			else
+			{
+				RemoveItem(Slot, RemainItems);
+				break;
+			}
 		}
 	}
 }
 
-void UInventoryComponent::SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2)
+void UInventoryComponent::SwapItem(UInventorySlot* CurrentSlot, UInventorySlot* PlayloadSlot)
 {
 	FItemRow TempRow;
 	int32 TempAmount;
 	UInventoryComponent* TempComponent;
 
-	TempRow = Slot1->Row;
-	TempAmount = Slot1->Amount;
-	TempComponent = Slot1->Inventory;
+	if (CurrentSlot->Row == PlayloadSlot->Row)
+	{
+		if (CurrentSlot->Row.bStack)
+		{
+			CurrentSlot->Amount += PlayloadSlot->Amount;
+			PlayloadSlot->Amount = 0;
+			PlayloadSlot->Row = EmptyItemRow;
+		}
+	}
+	else
+	{
+		TempRow = CurrentSlot->Row;
+		TempAmount = CurrentSlot->Amount;
+		TempComponent = CurrentSlot->Inventory;
 
-	Slot1->Row = Slot2->Row;
-	Slot1->Amount = Slot2->Amount;
-	Slot1->Inventory = Slot2->Inventory;
+		CurrentSlot->Row = PlayloadSlot->Row;
+		CurrentSlot->Amount = PlayloadSlot->Amount;
+		CurrentSlot->Inventory = PlayloadSlot->Inventory;
 
-	Slot2->Row = TempRow;
-	Slot2->Amount = TempAmount;
-	Slot2->Inventory = TempComponent;
+		PlayloadSlot->Row = TempRow;
+		PlayloadSlot->Amount = TempAmount;
+		PlayloadSlot->Inventory = TempComponent;
+	}
 
-	OnSwapItem.Broadcast(Slot1, Slot2);
+	OnSwapItem.Broadcast(CurrentSlot, PlayloadSlot);
 }
 
 void UInventoryComponent::SetCapacity(int32 NewCapacity)
@@ -208,7 +230,19 @@ bool UInventoryComponent::Contains(ABaseItem* Item)
 
 bool UInventoryComponent::Contains(FItemRow Row, int32 Amount)
 {
-	return Inventory.ContainsByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Row && Slot->Amount >= Amount; });
+	int32 NumItems = 0;
+	for (auto & Slot : Inventory)
+	{
+		if (Slot->Row == Row)
+		{
+			NumItems += Slot->Amount;
+		}
+
+		if (NumItems >= Amount)
+			return true;
+	}
+
+	return false;
 }
 
 bool UInventoryComponent::CanAddItems(TArray<FItemRow>& OutItems)
@@ -240,5 +274,10 @@ int32 UInventoryComponent::GetRemainSlots()
 
 UInventorySlot* UInventoryComponent::FindSlot(FItemRow Row)
 {
-	return *Inventory.FindByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Row; });
+	if (UInventorySlot** InventorySlot = Inventory.FindByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Row; }))
+	{
+		return *InventorySlot;
+	}
+
+	return nullptr;
 }

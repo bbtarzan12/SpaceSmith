@@ -92,7 +92,7 @@ void AFurnace::Crafting()
 						OutInformation.Emplace(*Row, Pair.Num);
 					}
 				}
-				if (!Inventory->CanAddItems(OutItems))
+				if (!Inventory->CanAddItems(OutItems)) // 제작물들을 인벤토리에 추가 할 수 있는가?
 					continue;
 
 				bool HasAllItems = true;

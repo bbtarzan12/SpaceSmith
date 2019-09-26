@@ -51,7 +51,7 @@ public:
 	void DropItem(UInventorySlot* Slot, int32 Amount);
 	void RemoveItem(UInventorySlot* Slot, int32 Amount);
 	void RemoveItem(FItemRow Row, int32 Amount);
-	void SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
+	void SwapItem(UInventorySlot* CurrentSlot, UInventorySlot* PlayloadSlot);
 	void SetCapacity(int32 NewCapacity);
 	bool Contains(ABaseItem* Item);
 	bool Contains(UInventorySlot* Slot);

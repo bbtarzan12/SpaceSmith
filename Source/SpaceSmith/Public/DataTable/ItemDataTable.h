@@ -42,10 +42,23 @@ public:
 	float CoolTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bFuel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = bFuel))
+	float FuelEfficiency;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Description;
 
 	bool operator==(const FItemRow& OtherItem) const;
+
+	friend uint32 GetTypeHash(const FItemRow& Other)
+	{
+		return GetTypeHash(Other.ItemID);
+	}
 };
+
+
 
 UCLASS()
 class SPACESMITH_API AItemDataTable : public AActor

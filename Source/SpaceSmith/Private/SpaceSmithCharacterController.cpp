@@ -177,12 +177,17 @@ void ASpaceSmithCharacterController::OnDropItem(UInventorySlot* Slot, FItemRow I
 			ItemActor->SetOwnerController(nullptr);
 		}
 	}
+	ReloadInventory();
+}
 
+void ASpaceSmithCharacterController::OnRemoveItem(UInventorySlot* Slot, int32 Amount)
+{
 	if (Slot == CurrentSelectedQuickSlot)
 	{
 		ASpaceSmithCharacter* SmithCharacter = Cast<ASpaceSmithCharacter>(GetPawn());
 		SmithCharacter->Slot(CurrentSelectedQuickSlot);
 	}
+
 	ReloadInventory();
 }
 

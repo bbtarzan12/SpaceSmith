@@ -18,10 +18,15 @@ public:
 	AFurnace();
 
 	virtual bool Interact_Implementation(ASpaceSmithCharacterController* Controller) override;
+	FORCEINLINE float GetFuelPercent() const { return CurrentFuel / MaxFuel; }
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void RunningTick(float DeltaTime) override;
+
+private:
+	void Fuel();
+	void Crafting();
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -31,5 +36,14 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bInteractWidgetOpen;
+
+	UPROPERTY(VisibleAnywhere)
+	float Energy;
+
+	UPROPERTY(VisibleAnywhere)
+	float CurrentFuel;
+
+	UPROPERTY(VisibleAnywhere)
+	float MaxFuel = 1000;
 
 };

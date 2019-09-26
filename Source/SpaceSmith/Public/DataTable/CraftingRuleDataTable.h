@@ -41,6 +41,9 @@ struct FCraftingRuleRow : public FTableRowBase
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FCraftingRule Rule;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RequireEnergy;
 };
 
 UCLASS()

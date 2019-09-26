@@ -58,6 +58,9 @@ private:
 	void OnDropItem(UInventorySlot* Slot, FItemRow ItemRow, int32 Amount);
 
 	UFUNCTION()
+	void OnRemoveItem(UInventorySlot* Slot, int32 Amount);
+
+	UFUNCTION()
 	void OnSwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
 
 	UFUNCTION()

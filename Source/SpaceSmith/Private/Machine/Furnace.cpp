@@ -6,6 +6,8 @@
 #include "SpaceSmithCharacterController.h"
 #include "InventoryComponent.h"
 #include "FurnaceInteractWidget.h"
+#include "SpaceSmithGameMode.h"
+#include "ItemDataTable.h"
 
 AFurnace::AFurnace()
 {
@@ -22,17 +24,114 @@ void AFurnace::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CurrentFuel = 0;
 	bInteractWidgetOpen = false;
 	InteractWidget = CreateWidget<UFurnaceInteractWidget>(GetWorld(), InteractWidgetClass);
-	InteractWidget->FurnaceCraftingInventory->SetOwner(Inventory);
-	InteractWidget->FurnaceFuelInventory->SetOwner(Inventory);
+	InteractWidget->FurnaceCraftingInventory->SetOwner(GetInventory(TEXT("Crafting")));
+	InteractWidget->FurnaceFuelInventory->SetOwner(GetInventory(TEXT("Fuel")));
+	InteractWidget->Furnace = this;
 }
 
 
 void AFurnace::RunningTick(float DeltaTime)
 {
 	Super::RunningTick(DeltaTime);
-	UE_LOG(LogTemp, Log, TEXT(":ASDF"));
+
+	Fuel();
+	Crafting();
+}
+
+void AFurnace::Fuel()
+{
+	if (UInventoryComponent* Inventory = GetInventory(TEXT("Fuel")))
+	{
+		const TArray<UInventorySlot*>& FuelItems = Inventory->GetItems();
+		for (auto& Item : FuelItems)
+		{
+			if (Item->Row.bFuel)
+			{
+				if (Item->Row.FuelEfficiency + CurrentFuel > MaxFuel)
+					continue;
+
+				Inventory->RemoveItem(Item, 1);
+				CurrentFuel += Item->Row.FuelEfficiency;
+				return;
+			}
+		}
+	}
+
+	CurrentFuel = FMath::Clamp(CurrentFuel - 1.0f, 0.0f, MaxFuel);
+	Energy += 1;
+	if (CurrentFuel == 0)
+	{
+		bRunning = false;
+		return;
+	}
+}
+
+void AFurnace::Crafting()
+{
+	if (UInventoryComponent* Inventory = GetInventory(TEXT("Crafting")))
+	{
+		if (ASpaceSmithGameMode* GameMode = Cast<ASpaceSmithGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			for (auto & Rule : GameMode->FurnaceCraftingRules)
+			{
+				if (Rule.RequireEnergy > Energy)
+					continue;
+
+				TArray<FItemRow> OutItems;
+				TMap<FItemRow, int32> InInformation;
+				TMap<FItemRow, int32> OutInformation;
+				for (auto & Pair : Rule.Rule.Out)
+				{
+					if (FItemRow* Row = Pair.Handle.GetRow<FItemRow>(TEXT("")))
+					{
+						OutItems.Emplace(*Row);
+						OutInformation.Emplace(*Row, Pair.Num);
+					}
+				}
+				if (!Inventory->CanAddItems(OutItems))
+					continue;
+
+				bool HasAllItems = true;
+				for (auto & Pair : Rule.Rule.In)
+				{
+					if (FItemRow* Row = Pair.Handle.GetRow<FItemRow>(TEXT("")))
+					{
+						if (Inventory->Contains(*Row, Pair.Num))
+						{
+							InInformation.Emplace(*Row, Pair.Num);
+						}
+						else
+						{
+							HasAllItems = false;
+							break;
+						}
+					}
+				}
+
+				if (HasAllItems)
+				{
+					Energy -= Rule.RequireEnergy;
+
+					for (TPair<FItemRow, int32>& In : InInformation)
+					{
+						Inventory->RemoveItem(In.Key, In.Value);
+					}
+
+					for (TPair<FItemRow, int32>& Out : OutInformation)
+					{
+						for (int32 Num = 0; Num < Out.Value; Num++)
+						{
+							Inventory->AddItem(Out.Key);
+						}
+					}
+					return;
+				}
+			}
+		}
+	}
 }
 
 bool AFurnace::Interact_Implementation(ASpaceSmithCharacterController* Controller)
@@ -63,17 +162,16 @@ bool AFurnace::Interact_Implementation(ASpaceSmithCharacterController* Controlle
 					InteractWidget->PlayerInventory->Add(Item);
 				}
 
-				const TArray<UInventorySlot*>& MachineItems = Inventory->GetItems();
-				int32 HalfNum = MachineItems.Num() / 2;
-
-				for (int32 Index = 0; Index < HalfNum; Index++)
+				const TArray<UInventorySlot*>& CraftingItems = GetInventory(TEXT("Crafting"))->GetItems();
+				for (auto & Item : CraftingItems)
 				{
-					InteractWidget->FurnaceFuelInventory->Add(MachineItems[Index]);
+					InteractWidget->FurnaceCraftingInventory->Add(Item);
 				}
 
-				for (int32 Index = HalfNum; Index < MachineItems.Num(); Index++)
+				const TArray<UInventorySlot*>& FuelItems = GetInventory(TEXT("Fuel"))->GetItems();
+				for (auto & Item : FuelItems)
 				{
-					InteractWidget->FurnaceCraftingInventory->Add(MachineItems[Index]);
+					InteractWidget->FurnaceFuelInventory->Add(Item);
 				}
 
 				bInteractWidgetOpen = true;

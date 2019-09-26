@@ -2,4 +2,15 @@
 
 
 #include "FurnaceInteractWidget.h"
+#include "Furnace.h"
 
+
+float UFurnaceInteractWidget::GetCurrentFuelPercent() const
+{
+	if (Furnace)
+	{
+		return Furnace->GetFuelPercent();
+	}
+
+	return 0;
+}

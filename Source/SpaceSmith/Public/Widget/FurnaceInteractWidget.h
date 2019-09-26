@@ -14,7 +14,12 @@ class SPACESMITH_API UFurnaceInteractWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
+	
+	
 public:
+	UPROPERTY(VisibleAnywhere)
+	class AFurnace* Furnace;
+
 	UPROPERTY(meta = (BindWidget))
 	class UInventoryWidget* FurnaceCraftingInventory;
 
@@ -23,5 +28,8 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UInventoryWidget* PlayerInventory;
+
+	UFUNCTION(BlueprintCallable)
+	float GetCurrentFuelPercent() const;
 	
 };

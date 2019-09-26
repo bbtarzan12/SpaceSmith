@@ -13,7 +13,7 @@ ABaseMachine::ABaseMachine()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
-	
+
 	InformationWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Information Widget Component"));
 	InformationWidget->SetupAttachment(RootComponent);
 
@@ -49,13 +49,15 @@ void ABaseMachine::Initialize(FMachineRow Machine)
 	Data = Machine;
 	Mesh->SetStaticMesh(Data.Mesh);
 
-	if (Data.bInventory)
+	for (auto& InventoryInformation : Data.Inventories)
 	{
-		Inventory = NewObject<UInventoryComponent>(this, TEXT("InventoryComponent"));
+		UInventoryComponent* Inventory = NewObject<UInventoryComponent>(this, InventoryInformation.Name);
 		Inventory->RegisterComponent();
-		Inventory->SetCapacity(Data.Capacity);
-		Inventory->SetName(Data.Name);
+		Inventory->SetCapacity(InventoryInformation.Capacity);
+		Inventory->SetName(InventoryInformation.DisplayName);
 		AddOwnedComponent(Inventory);
+
+		Inventories.Emplace(InventoryInformation.Name, Inventory);
 	}
 }
 

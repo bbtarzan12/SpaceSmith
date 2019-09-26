@@ -10,9 +10,9 @@ void UPlayerInventoryWidget::SetOwner(UInventoryComponent* NewOwner)
 	Inventory->SetOwner(NewOwner);
 }
 
-void UPlayerInventoryWidget::Add(UInventorySlot* Slot)
+void UPlayerInventoryWidget::Add(UInventorySlot* InventorySlot)
 {
-	Inventory->Add(Slot);
+	Inventory->Add(InventorySlot);
 }
 
 void UPlayerInventoryWidget::Clear()

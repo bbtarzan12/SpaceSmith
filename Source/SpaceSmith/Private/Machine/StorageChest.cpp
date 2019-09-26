@@ -22,7 +22,7 @@ void AStorageChest::BeginPlay()
 
 	bInteractWidgetOpen = false;
 	InteractWidget = CreateWidget<UStorageInteractWidget>(GetWorld(), InteractWidgetClass);
-	InteractWidget->MachineInventory->SetOwner(Inventory);
+	InteractWidget->MachineInventory->SetOwner(GetInventory(TEXT("Storage")));
 }
 
 bool AStorageChest::Interact_Implementation(ASpaceSmithCharacterController* Controller)
@@ -39,25 +39,28 @@ bool AStorageChest::Interact_Implementation(ASpaceSmithCharacterController* Cont
 			}
 			else
 			{
-				InteractWidget->AddToViewport(5);
-				InteractWidget->PlayerInventory->SetOwner(Controller->Inventory);
-				Controller->ShowViewportWidget(true);
-
-				InteractWidget->MachineInventory->Clear();
-				InteractWidget->PlayerInventory->Clear();
-
-				const TArray<UInventorySlot*>& PlayerItems = Controller->Inventory->GetItems();
-				for (auto & Item : PlayerItems)
+				if (UInventoryComponent* Inventory = GetInventory(TEXT("Storage")))
 				{
-					InteractWidget->PlayerInventory->Add(Item);
-				}
+					InteractWidget->AddToViewport(5);
+					InteractWidget->PlayerInventory->SetOwner(Controller->Inventory);
+					Controller->ShowViewportWidget(true);
 
-				const TArray<UInventorySlot*>& MachineItems = Inventory->GetItems();
-				for (auto & Item : MachineItems)
-				{
-					InteractWidget->MachineInventory->Add(Item);
+					InteractWidget->MachineInventory->Clear();
+					InteractWidget->PlayerInventory->Clear();
+
+					const TArray<UInventorySlot*>& PlayerItems = Controller->Inventory->GetItems();
+					for (auto & Item : PlayerItems)
+					{
+						InteractWidget->PlayerInventory->Add(Item);
+					}
+
+					const TArray<UInventorySlot*>& MachineItems = Inventory->GetItems();
+					for (auto & Item : MachineItems)
+					{
+						InteractWidget->MachineInventory->Add(Item);
+					}
+					bInteractWidgetOpen = true;
 				}
-				bInteractWidgetOpen = true;
 			}
 			return true;
 		}

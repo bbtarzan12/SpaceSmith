@@ -5,7 +5,7 @@
 #include "Public/BaseItem.h"
 #include "SpaceSmithGameMode.h"
 
-FItemRow* UInventoryComponent::EmptyItemRow;
+FItemRow UInventoryComponent::EmptyItemRow;
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
@@ -26,17 +26,32 @@ void UInventoryComponent::BeginPlay()
 	Super::BeginPlay();
 
 	ASpaceSmithGameMode* GameMode = Cast<ASpaceSmithGameMode>(GetWorld()->GetAuthGameMode());
-	EmptyItemRow = GameMode->ItemDataTable->FindRow<FItemRow>(TEXT("Empty"), FString("Can not Found Empty from FItemRow"));
-	ensure(EmptyItemRow);
+	EmptyItemRow = *GameMode->ItemDataTable->FindRow<FItemRow>(TEXT("Empty"), FString("Can not Found Empty from FItemRow"));
 
 	SetCapacity(1);
 }
 
 bool UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/)
 {
-	UInventorySlot* StoredSlot = nullptr;
-
 	const FItemRow& ItemData = AddingItem->Data;
+
+	if (AddItem(ItemData))
+	{
+		if (Destroy)
+		{
+			AddingItem->Destroy();
+		}
+
+		OnAddItem.Broadcast(AddingItem);
+		return true;
+	}
+
+	return false;
+}
+
+bool UInventoryComponent::AddItem(FItemRow ItemData)
+{
+	UInventorySlot* StoredSlot = nullptr;
 
 	// 스택을 쌓을 수 있다면
 	if (ItemData.bStack)
@@ -85,12 +100,6 @@ bool UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 		return false;
 	}
 
-	if (Destroy)
-	{
-		AddingItem->Destroy();
-	}
-
-	OnAddItem.Broadcast(AddingItem);
 	return true;
 }
 
@@ -108,11 +117,42 @@ void UInventoryComponent::DropItem(UInventorySlot* Slot, int32 Amount)
 	if (Slot->Amount <= 0)
 	{
 		Slot->Amount = 0;
-		Slot->Row = *EmptyItemRow;
+		Slot->Row = EmptyItemRow;
 	}
 
 	OnDropItem.Broadcast(Slot, ItemRow, Amount);
 
+}
+
+void UInventoryComponent::RemoveItem(UInventorySlot* Slot, int32 Amount)
+{
+	if (Slot == nullptr)
+		return;
+
+	if (Slot->Amount < Amount)
+		return;
+
+	Slot->Amount -= Amount;
+	FItemRow ItemRow = Slot->Row;
+
+	if (Slot->Amount <= 0)
+	{
+		Slot->Amount = 0;
+		Slot->Row = EmptyItemRow;
+	}
+
+	OnRemoveItem.Broadcast(Slot, Amount);
+}
+
+void UInventoryComponent::RemoveItem(FItemRow Row, int32 Amount)
+{
+	if (Contains(Row, Amount))
+	{
+		if (UInventorySlot* Slot = FindSlot(Row))
+		{
+			RemoveItem(Slot, Amount);
+		}
+	}
 }
 
 void UInventoryComponent::SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2)
@@ -136,16 +176,6 @@ void UInventoryComponent::SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2)
 	OnSwapItem.Broadcast(Slot1, Slot2);
 }
 
-bool UInventoryComponent::Contains(UInventorySlot* Slot)
-{
-	return Inventory.Contains(Slot);
-}
-
-bool UInventoryComponent::Contains(ABaseItem* Item)
-{
-	return Inventory.ContainsByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Item->Data; });
-}
-
 void UInventoryComponent::SetCapacity(int32 NewCapacity)
 {
 	int32 NumNewSlots = NewCapacity - Inventory.Num();
@@ -157,10 +187,57 @@ void UInventoryComponent::SetCapacity(int32 NewCapacity)
 	{
 		UInventorySlot* NewItem = NewObject<UInventorySlot>();
 		NewItem->Amount = 0;
-		NewItem->Row = *EmptyItemRow;
+		NewItem->Row = EmptyItemRow;
 		NewItem->Inventory = this;
 		Inventory.Add(NewItem);
 	}
 
 	OnSetCapacity.Broadcast(NewCapacity);
+}
+
+bool UInventoryComponent::Contains(UInventorySlot* Slot)
+{
+	return Inventory.Contains(Slot);
+}
+
+bool UInventoryComponent::Contains(ABaseItem* Item)
+{
+	return Inventory.ContainsByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Item->Data; });
+}
+
+bool UInventoryComponent::Contains(FItemRow Row, int32 Amount)
+{
+	return Inventory.ContainsByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Row && Slot->Amount >= Amount; });
+}
+
+bool UInventoryComponent::CanAddItems(TArray<FItemRow>& OutItems)
+{
+	int32 NumItems = OutItems.Num();
+	for (auto & Item : OutItems)
+	{
+		if (Item.bStack && Contains(Item, 1))
+		{
+			NumItems -= 1;
+		}
+	}
+
+	return NumItems <= GetRemainSlots();
+}
+
+int32 UInventoryComponent::GetRemainSlots()
+{
+	int32 NumRemain = 0;
+	for (auto & Slot : Inventory)
+	{
+		if (Slot->Row == EmptyItemRow)
+		{
+			NumRemain++;
+		}
+	}
+	return NumRemain;
+}
+
+UInventorySlot* UInventoryComponent::FindSlot(FItemRow Row)
+{
+	return *Inventory.FindByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Row; });
 }

@@ -12,6 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryOnAddSignature, class ABas
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FInventoryOnDropSignature, class UInventorySlot*, Slot, FItemRow, ItemRow, int32, Amount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryOnSwapSignature, class UInventorySlot*, Slot1, class UInventorySlot*, Slot2);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryOnSetCapacitySignature, int32, NewCapacity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryOnRemoveSignature, class UInventorySlot*, Slot, int32, Amount);
 
 class ABaseItem;
 
@@ -46,11 +47,18 @@ public:
 
 	void SetName(FText NewInventoryName);
 	bool AddItem(ABaseItem* AddingItem, bool Destroy = true);
+	bool AddItem(FItemRow AddingRow);
 	void DropItem(UInventorySlot* Slot, int32 Amount);
+	void RemoveItem(UInventorySlot* Slot, int32 Amount);
+	void RemoveItem(FItemRow Row, int32 Amount);
 	void SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
+	void SetCapacity(int32 NewCapacity);
 	bool Contains(ABaseItem* Item);
 	bool Contains(UInventorySlot* Slot);
-	void SetCapacity(int32 NewCapacity);
+	bool Contains(FItemRow Row, int32 Amount);
+	bool CanAddItems(TArray<FItemRow>& OutItems);
+	int32 GetRemainSlots();
+	UInventorySlot* FindSlot(FItemRow Row);
 
 	FORCEINLINE const TArray<UInventorySlot*>& GetItems() const { return Inventory; };
 	FORCEINLINE const FText& GetInventoryName() const { return InventoryName; }
@@ -60,6 +68,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FInventoryOnDropSignature OnDropItem;
+
+	UPROPERTY(BlueprintAssignable)
+	FInventoryOnRemoveSignature OnRemoveItem;
 
 	UPROPERTY(BlueprintAssignable)
 	FInventoryOnSwapSignature OnSwapItem;
@@ -78,7 +89,6 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	FText InventoryName;
 
-	static FItemRow* EmptyItemRow;
+	static FItemRow EmptyItemRow;
 
-		
 };

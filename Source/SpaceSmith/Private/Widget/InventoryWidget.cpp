@@ -12,9 +12,9 @@ void UInventoryWidget::SetOwner(UInventoryComponent* NewOwner)
 	OwnerComponent = NewOwner;
 }
 
-void UInventoryWidget::Add(UInventorySlot* Slot)
+void UInventoryWidget::Add(UInventorySlot* InventorySlot)
 {
-	SlotTile->AddItem(Slot);
+	SlotTile->AddItem(InventorySlot);
 }
 
 void UInventoryWidget::Clear()

@@ -7,6 +7,22 @@
 #include <Engine/DataTable.h>
 #include "MachineDataTable.generated.h"
 
+USTRUCT(BlueprintType)
+struct FInventoryInformation
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Capacity;
+};
 
 USTRUCT(BlueprintType)
 struct FMachineRow : public FTableRowBase
@@ -29,10 +45,7 @@ public:
 	UStaticMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bInventory;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bInventory"))
-	int32 Capacity;
+	TArray<FInventoryInformation> Inventories;
 
 	bool operator==(const FMachineRow& Other) const;
 };

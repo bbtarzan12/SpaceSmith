@@ -39,4 +39,21 @@ ASpaceSmithGameMode::ASpaceSmithGameMode()
 			}
 		}
 	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> FurnaceCraftingRuleDataTableFinder(TEXT("DataTable'/Game/SpaceSmith/Data/DataTable/DT_FurnaceRule'"));
+	if (FurnaceCraftingRuleDataTableFinder.Succeeded())
+	{
+		FurnaceCraftingRuleDataTable = FurnaceCraftingRuleDataTableFinder.Object;
+		
+		TArray<FCraftingRuleRow*> Rows;
+		FurnaceCraftingRuleDataTable->GetAllRows<FCraftingRuleRow>(TEXT("Can not find FCraftingRuleRow"), Rows);
+
+		for (auto & Row : Rows)
+		{
+			if (Row)
+			{
+				FurnaceCraftingRules.Emplace(*Row);
+			}
+		}
+	}
 }

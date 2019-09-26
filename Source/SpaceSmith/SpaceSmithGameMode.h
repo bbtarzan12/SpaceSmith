@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "ResourceDataTable.h"
+#include "CraftingRuleDataTable.h"
 #include "SpaceSmithGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -23,7 +24,13 @@ public:
 	class UDataTable* ResourceDataTable;
 
 	UPROPERTY()
+	class UDataTable* FurnaceCraftingRuleDataTable;
+
+	UPROPERTY()
 	TMap<FString, FResourceRow> ResourceMap;
+
+	UPROPERTY()
+	TArray<FCraftingRuleRow> FurnaceCraftingRules;
 };
 
 

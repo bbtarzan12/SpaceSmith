@@ -8,6 +8,7 @@
 #include "Interface/Select.h"
 #include "Interact.h"
 #include "Action.h"
+#include "InventoryComponent.h"
 #include "BaseMachine.generated.h"
 
 class ASpaceSmithCharacterController;
@@ -55,6 +56,7 @@ public:
 	virtual FText GetActionInformationText_Implementation() override;
 
 	FORCEINLINE const FText& GetName() const { return Data.Name; };
+	FORCEINLINE UInventoryComponent* GetInventory(FName Name) const { if (Inventories.Contains(Name)) { check(Inventories[Name]); return Inventories[Name]; } return nullptr; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -75,9 +77,6 @@ protected:
 	class UWidgetComponent* InformationWidget;
 
 	UPROPERTY(VisibleAnywhere)
-	class UInventoryComponent* Inventory;
-
-	UPROPERTY(VisibleAnywhere)
 	bool bRunning;
 
 	UPROPERTY(VisibleAnywhere)
@@ -85,6 +84,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	float MachineTickInterval;
+
+private:
+	UPROPERTY(VisibleAnywhere)
+	TMap<FName, UInventoryComponent*> Inventories;
 
 
 };

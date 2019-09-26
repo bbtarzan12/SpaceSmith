@@ -89,6 +89,7 @@ bool UInventoryComponent::AddItem(FItemRow ItemData)
 		{
 			StoredSlot->Row = ItemData;
 			StoredSlot->Amount = 1;
+			StoredSlot->Inventory = this;
 		}
 		else
 		{

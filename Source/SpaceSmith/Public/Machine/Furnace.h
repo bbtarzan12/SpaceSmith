@@ -19,6 +19,7 @@ public:
 
 	virtual bool Interact_Implementation(ASpaceSmithCharacterController* Controller) override;
 	FORCEINLINE float GetFuelPercent() const { return CurrentFuel / MaxFuel; }
+	FORCEINLINE float GetEnergyPercent() const { return Energy / MaxEnergy; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -45,5 +46,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	float MaxFuel = 1000;
+
+	UPROPERTY(VisibleAnywhere)
+	float MaxEnergy = 1000;
 
 };

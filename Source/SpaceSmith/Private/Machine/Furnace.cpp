@@ -43,6 +43,9 @@ void AFurnace::RunningTick(float DeltaTime)
 
 void AFurnace::Fuel()
 {
+	CurrentFuel = FMath::Clamp(CurrentFuel - 1.0f, 0.0f, MaxFuel);
+	Energy = FMath::Clamp(Energy + 1.0f, 0.0f, MaxEnergy);
+
 	if (UInventoryComponent* Inventory = GetInventory(TEXT("Fuel")))
 	{
 		const TArray<UInventorySlot*>& FuelItems = Inventory->GetItems();
@@ -60,8 +63,6 @@ void AFurnace::Fuel()
 		}
 	}
 
-	CurrentFuel = FMath::Clamp(CurrentFuel - 1.0f, 0.0f, MaxFuel);
-	Energy += 1;
 	if (CurrentFuel == 0)
 	{
 		bRunning = false;

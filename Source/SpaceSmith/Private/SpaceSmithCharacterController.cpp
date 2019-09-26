@@ -314,9 +314,9 @@ void ASpaceSmithCharacterController::ShowViewportWidget(bool Show)
 
 bool ASpaceSmithCharacterController::DropItemToWorld(UInventorySlot* Slot, int32 Amount)
 {
-	if (Slot->Inventory)
+	if (Inventory)
 	{
-		Slot->Inventory->DropItem(Slot, Amount);
+		Inventory->DropItem(Slot, Amount);
 	}
 	return true;
 }

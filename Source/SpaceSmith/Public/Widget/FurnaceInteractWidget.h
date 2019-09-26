@@ -32,4 +32,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetCurrentFuelPercent() const;
 	
+	UFUNCTION(BlueprintCallable)
+	float GetEnergyPercent() const;
 };

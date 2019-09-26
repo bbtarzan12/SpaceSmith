@@ -14,3 +14,13 @@ float UFurnaceInteractWidget::GetCurrentFuelPercent() const
 
 	return 0;
 }
+
+float UFurnaceInteractWidget::GetEnergyPercent() const
+{
+	if (Furnace)
+	{
+		return Furnace->GetEnergyPercent();
+	}
+
+	return 0;
+}

@@ -141,6 +141,11 @@ bool UInventoryComponent::Contains(UInventorySlot* Slot)
 	return Inventory.Contains(Slot);
 }
 
+bool UInventoryComponent::Contains(ABaseItem* Item)
+{
+	return Inventory.ContainsByPredicate([&](const UInventorySlot* Slot) { return Slot->Row == Item->Data; });
+}
+
 void UInventoryComponent::SetCapacity(int32 NewCapacity)
 {
 	int32 NumNewSlots = NewCapacity - Inventory.Num();

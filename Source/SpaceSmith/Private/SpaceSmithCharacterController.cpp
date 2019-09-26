@@ -225,6 +225,25 @@ void ASpaceSmithCharacterController::ReloadAddInformation()
 
 bool ASpaceSmithCharacterController::AddItemToInventory(ABaseItem* AddingItem, bool Destroy)
 {
+	if (AddingItem->Data.bStack)
+	{
+		if (Inventory->Contains(AddingItem))
+		{
+			if (Inventory->AddItem(AddingItem, Destroy))
+			{
+				return true;
+			}
+		}
+
+		if (QuickSlot->Contains(AddingItem))
+		{
+			if (QuickSlot->AddItem(AddingItem, Destroy))
+			{
+				return true;
+			}
+		}
+	}
+
 	if (!Inventory->AddItem(AddingItem, Destroy))
 	{
 		if (!QuickSlot->AddItem(AddingItem, Destroy))

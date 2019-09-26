@@ -48,6 +48,7 @@ public:
 	bool AddItem(ABaseItem* AddingItem, bool Destroy = true);
 	void DropItem(UInventorySlot* Slot, int32 Amount);
 	void SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2);
+	bool Contains(ABaseItem* Item);
 	bool Contains(UInventorySlot* Slot);
 	void SetCapacity(int32 NewCapacity);
 

@@ -59,7 +59,7 @@ void AResourceDetector::StartFire()
 	{
 		if (UInstancedStaticMeshComponent* InstancedComponent = Cast<UInstancedStaticMeshComponent>(InstancedStaticMeshComponent))
 		{
-			TArray<int32> Indices = InstancedComponent->GetInstancesOverlappingSphere(GetActorLocation(), 5000, true);
+			TArray<int32> Indices = InstancedComponent->GetInstancesOverlappingSphere(GetActorLocation(), 3000, true);
 			for (auto& Index : Indices)
 			{
 				FTransform FoliageTransform;
@@ -87,7 +87,7 @@ void AResourceDetector::StartFire()
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
 	TArray<AActor*> IgnoreActors;
 	TArray<AActor*> OutActors;
-	if (UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 5000, ObjectTypes, ABaseResource::StaticClass(), IgnoreActors, OutActors))
+	if (UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(), 3000, ObjectTypes, ABaseResource::StaticClass(), IgnoreActors, OutActors))
 	{
 		for (auto& OutActor : OutActors)
 		{

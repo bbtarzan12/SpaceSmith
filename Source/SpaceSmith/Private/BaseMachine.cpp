@@ -17,6 +17,9 @@ ABaseMachine::ABaseMachine()
 	InformationWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Information Widget Component"));
 	InformationWidget->SetupAttachment(RootComponent);
 
+	bMachineTickable = false;
+	MachineTickInterval = 1.0f;
+
 	RootComponent = Mesh;
 }
 
@@ -25,6 +28,8 @@ void ABaseMachine::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetActorTickEnabled(bMachineTickable);
+	SetActorTickInterval(MachineTickInterval);
 	InformationWidget->SetHiddenInGame(true);
 	InformationWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	InformationWidget->SetDrawAtDesiredSize(true);
@@ -59,6 +64,13 @@ void ABaseMachine::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if(bRunning)
+		RunningTick(DeltaTime);
+}
+
+void ABaseMachine::RunningTick(float DeltaTime)
+{
+
 }
 
 bool ABaseMachine::Select_Implementation(FHitResult HitResult)
@@ -92,4 +104,33 @@ bool ABaseMachine::Interact_Implementation(ASpaceSmithCharacterController* Contr
 FText ABaseMachine::GetInteractInformationText_Implementation()
 {
 	return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Interact_Machine")));
+}
+
+bool ABaseMachine::Action_Implementation()
+{
+	if (bMachineTickable)
+	{
+		bRunning = !bRunning;
+		return bRunning;
+	}
+
+	return false;
+}
+
+FText ABaseMachine::GetActionInformationText_Implementation()
+{
+	if (bMachineTickable)
+	{
+		if (bRunning)
+		{
+			return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Action_Machine_Running")));
+
+		}
+		else
+		{
+			return FText::FromStringTable("/Game/SpaceSmith/Data/StringTable/KeyInformation", FString(TEXT("Action_Machine_Off")));
+		}
+	}
+
+	return FText::GetEmpty();
 }

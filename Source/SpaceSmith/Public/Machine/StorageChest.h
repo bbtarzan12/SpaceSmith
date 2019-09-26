@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BaseMachine.h"
-#include "StorageInteractWidget.h"
 #include "StorageChest.generated.h"
 
 /**
@@ -25,7 +24,7 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere)
-	UStorageInteractWidget* InteractWidget;
+	class UStorageInteractWidget* InteractWidget;
 
 	TSubclassOf<class UUserWidget> InteractWidgetClass;
 

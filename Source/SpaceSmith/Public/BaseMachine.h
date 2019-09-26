@@ -7,12 +7,13 @@
 #include "DataTable/MachineDataTable.h"
 #include "Interface/Select.h"
 #include "Interact.h"
+#include "Action.h"
 #include "BaseMachine.generated.h"
 
 class ASpaceSmithCharacterController;
 
 UCLASS()
-class SPACESMITH_API ABaseMachine : public AActor, public ISelect, public IInteract
+class SPACESMITH_API ABaseMachine : public AActor, public ISelect, public IInteract, public IAction
 {
 	GENERATED_BODY()
 	
@@ -45,11 +46,20 @@ public:
 	FText GetInteractInformationText();
 	virtual FText GetInteractInformationText_Implementation() override;
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool Action();
+	virtual bool Action_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FText GetActionInformationText();
+	virtual FText GetActionInformationText_Implementation() override;
+
 	FORCEINLINE const FText& GetName() const { return Data.Name; };
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void RunningTick(float DeltaTime);
 
 public:
 	FMachineRow Data;
@@ -66,6 +76,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	class UInventoryComponent* Inventory;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bRunning;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bMachineTickable;
+
+	UPROPERTY(VisibleAnywhere)
+	float MachineTickInterval;
 
 
 };

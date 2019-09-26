@@ -15,6 +15,7 @@
 #include "Public/SpaceSmithCharacterController.h"
 #include "Public/Component/InventoryComponent.h"
 #include "Public/Interface/Pick.h"
+#include "Action.h"
 
 
 
@@ -53,7 +54,7 @@ void ASpaceSmithCharacter::Tick(float DeltaTime)
 	if (CharacterController->GetViewportWidgetVisible())
 		return;
 
-	if (HasHoldingItem())
+	if (HasHoldingPickable())
 	{
 		HoldItem(DeltaTime);
 	}
@@ -65,7 +66,7 @@ void ASpaceSmithCharacter::Tick(float DeltaTime)
 
 void ASpaceSmithCharacter::PickUp()
 {
-	if (HasSelectedItem())
+	if (HasSelectable())
 	{
 		if (Selectable.GetObject()->GetClass()->ImplementsInterface(UPick::StaticClass()))
 		{
@@ -87,7 +88,7 @@ void ASpaceSmithCharacter::PickUp()
 
 void ASpaceSmithCharacter::Drop()
 {
-	if (HasHoldingItem())
+	if (HasHoldingPickable())
 	{
 		IPick::Execute_Drop(HoldingPickable.GetObject());
 		ResetHolding();
@@ -203,11 +204,11 @@ void ASpaceSmithCharacter::OnHold()
 	if (CharacterController->GetViewportWidgetVisible())
 		return;
 
-	if (HasHoldingItem())
+	if (HasHoldingPickable())
 	{
 		Drop();
 	}
-	else if (HasSelectedItem())
+	else if (HasSelectable())
 	{
 		PickUp();
 	}
@@ -220,6 +221,14 @@ void ASpaceSmithCharacter::OnAction()
 
 	if (CharacterController->GetViewportWidgetVisible())
 		return;
+
+	if (HasSelectable())
+	{
+		if (IAction* Actionable = Cast<IAction>(Selectable.GetObject()))
+		{
+			IAction::Execute_Action(Selectable.GetObject());
+		}
+	}
 }
 
 void ASpaceSmithCharacter::OnInteract()
@@ -227,7 +236,7 @@ void ASpaceSmithCharacter::OnInteract()
 	if (CharacterController->GetInventoryVisible())
 		return;
 
-	if (HasSelectedItem())
+	if (HasSelectable())
 	{
 		if (IInteract* Interactable = Cast<IInteract>(Selectable.GetObject()))
 		{

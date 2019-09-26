@@ -94,7 +94,9 @@ void ASpaceSmithCharacterController::Select(AActor* Actor)
 				UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
 				KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
 				KeyInformation->KeyInformation = IInteract::Execute_GetInteractInformationText(Actor);
-				Widget->KeyInformation->Add(KeyInformation);
+
+				if (!KeyInformation->KeyInformation.IsEmptyOrWhitespace())
+					Widget->KeyInformation->Add(KeyInformation);
 			}
 		}
 
@@ -106,7 +108,23 @@ void ASpaceSmithCharacterController::Select(AActor* Actor)
 				UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
 				KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
 				KeyInformation->KeyInformation = IPick::Execute_GetPickInformationText(Actor);
-				Widget->KeyInformation->Add(KeyInformation);
+
+				if (!KeyInformation->KeyInformation.IsEmptyOrWhitespace())
+					Widget->KeyInformation->Add(KeyInformation);
+			}
+		}
+
+		if (ActorClass->ImplementsInterface(UAction::StaticClass()))
+		{
+			const TArray<FInputActionKeyMapping>& ActionKeyMappings = PlayerInput->GetKeysForAction(TEXT("Action"));
+			if (ActionKeyMappings.Num() > 0)
+			{
+				UKeyInformation* KeyInformation = NewObject<UKeyInformation>(this);
+				KeyInformation->Key = FText::Format(FTextFormat(FText::FromString("[{0}]")), FText::FromString(ActionKeyMappings[0].Key.ToString()));
+				KeyInformation->KeyInformation = IAction::Execute_GetActionInformationText(Actor);
+
+				if (!KeyInformation->KeyInformation.IsEmptyOrWhitespace())
+					Widget->KeyInformation->Add(KeyInformation);
 			}
 		}
 	}

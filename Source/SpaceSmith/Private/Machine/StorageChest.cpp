@@ -5,10 +5,11 @@
 #include "InventoryWidget.h"
 #include "SpaceSmithCharacterController.h"
 #include "InventoryComponent.h"
+#include "StorageInteractWidget.h"
 
 AStorageChest::AStorageChest() : Super()
 {
-	static ConstructorHelpers::FClassFinder<UStorageInteractWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/WBP_StorageInteract'"));
+	static ConstructorHelpers::FClassFinder<UStorageInteractWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/SpaceSmith/UMG/Machine/WBP_StorageInteract'"));
 	if (WidgetAsset.Succeeded())
 	{
 		InteractWidgetClass = WidgetAsset.Class;

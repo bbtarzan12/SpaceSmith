@@ -27,10 +27,10 @@ public:
 	void Slot(UInventorySlot* Slot);
 
 	UFUNCTION(BlueprintCallable, Category = "Pickable")
-	FORCEINLINE bool HasHoldingItem() const { return HoldingPickable.GetObject(); }
+	FORCEINLINE bool HasHoldingPickable() const { return HoldingPickable.GetObject(); }
 
 	UFUNCTION(BlueprintCallable, Category = "Select")
-	FORCEINLINE bool HasSelectedItem() const { return Selectable.GetObject() != nullptr; }
+	FORCEINLINE bool HasSelectable() const { return Selectable.GetObject() != nullptr; }
 
 	FORCEINLINE UCameraComponent* GetCameraController() const { return FirstPersonCameraComponent; }
 

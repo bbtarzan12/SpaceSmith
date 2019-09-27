@@ -23,14 +23,20 @@ public:
 	UPROPERTY()
 	class UDataTable* ResourceDataTable;
 
-	UPROPERTY()
-	class UDataTable* FurnaceCraftingRuleDataTable;
-
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FResourceRow> ResourceMap;
 
 	UPROPERTY()
+	class UDataTable* FurnaceCraftingRuleDataTable;
+
+	UPROPERTY(VisibleAnywhere)
 	TArray<FCraftingRuleRow> FurnaceCraftingRules;
+
+	UPROPERTY()
+	class UDataTable* ManufacturerCraftingRuleDataTable;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<FCraftingRuleRow> ManufacturerCraftingRules;
 };
 
 

@@ -18,6 +18,7 @@ UInventoryComponent::UInventoryComponent()
 void UInventoryComponent::SetName(FText NewInventoryName)
 {
 	InventoryName = NewInventoryName;
+	OnAnyChange.Broadcast();
 }
 
 // Called when the game starts
@@ -43,6 +44,7 @@ bool UInventoryComponent::AddItem(ABaseItem* AddingItem, bool Destroy /*= true*/
 		}
 
 		OnAddItem.Broadcast(AddingItem);
+		OnAnyChange.Broadcast();
 		return true;
 	}
 
@@ -94,6 +96,7 @@ bool UInventoryComponent::AddItem(FItemRow ItemData)
 		else
 		{
 			StoredSlot->Amount++;
+			StoredSlot->Inventory = this;
 		}
 	}
 	else // ½ÇÆÐ
@@ -122,7 +125,7 @@ void UInventoryComponent::DropItem(UInventorySlot* Slot, int32 Amount)
 	}
 
 	OnDropItem.Broadcast(Slot, ItemRow, Amount);
-
+	OnAnyChange.Broadcast();
 }
 
 void UInventoryComponent::RemoveItem(UInventorySlot* Slot, int32 Amount)
@@ -143,6 +146,7 @@ void UInventoryComponent::RemoveItem(UInventorySlot* Slot, int32 Amount)
 	}
 
 	OnRemoveItem.Broadcast(Slot, Amount);
+	OnAnyChange.Broadcast();
 }
 
 void UInventoryComponent::RemoveItem(FItemRow Row, int32 Amount)
@@ -150,53 +154,57 @@ void UInventoryComponent::RemoveItem(FItemRow Row, int32 Amount)
 	if (Contains(Row, Amount))
 	{
 		int32 RemainItems = Amount;
-		while (UInventorySlot* Slot = FindSlot(Row))
+		while (RemainItems > 0)
 		{
-			if (Slot->Amount < RemainItems)
+			if (UInventorySlot* Slot = FindSlot(Row))
 			{
-				RemoveItem(Slot, Slot->Amount);
-				RemainItems -= Slot->Amount;
+				if (Slot->Amount <= RemainItems)
+				{
+					RemainItems -= Slot->Amount;
+					RemoveItem(Slot, Slot->Amount);
+				}
+				else
+				{
+					RemoveItem(Slot, RemainItems);
+					RemainItems -= RemainItems;
+				}
 			}
 			else
 			{
-				RemoveItem(Slot, RemainItems);
 				break;
 			}
 		}
 	}
 }
 
-void UInventoryComponent::SwapItem(UInventorySlot* CurrentSlot, UInventorySlot* PlayloadSlot)
+void UInventoryComponent::SwapItem(UInventorySlot* CurrentSlot, UInventorySlot* PayloadSlot)
 {
 	FItemRow TempRow;
 	int32 TempAmount;
-	UInventoryComponent* TempComponent;
 
-	if (CurrentSlot->Row == PlayloadSlot->Row)
+	if (CurrentSlot->Row == PayloadSlot->Row && CurrentSlot->Row.bStack)
 	{
-		if (CurrentSlot->Row.bStack)
-		{
-			CurrentSlot->Amount += PlayloadSlot->Amount;
-			PlayloadSlot->Amount = 0;
-			PlayloadSlot->Row = EmptyItemRow;
-		}
+		CurrentSlot->Amount += PayloadSlot->Amount;
+		PayloadSlot->Amount = 0;
+		PayloadSlot->Row = EmptyItemRow;
 	}
 	else
 	{
 		TempRow = CurrentSlot->Row;
 		TempAmount = CurrentSlot->Amount;
-		TempComponent = CurrentSlot->Inventory;
 
-		CurrentSlot->Row = PlayloadSlot->Row;
-		CurrentSlot->Amount = PlayloadSlot->Amount;
-		CurrentSlot->Inventory = PlayloadSlot->Inventory;
+		CurrentSlot->Row = PayloadSlot->Row;
+		CurrentSlot->Amount = PayloadSlot->Amount;
 
-		PlayloadSlot->Row = TempRow;
-		PlayloadSlot->Amount = TempAmount;
-		PlayloadSlot->Inventory = TempComponent;
+		PayloadSlot->Row = TempRow;
+		PayloadSlot->Amount = TempAmount;
 	}
 
-	OnSwapItem.Broadcast(CurrentSlot, PlayloadSlot);
+	CurrentSlot->Inventory->OnSwapItem.Broadcast(CurrentSlot, PayloadSlot);
+	CurrentSlot->Inventory->OnAnyChange.Broadcast();
+
+	PayloadSlot->Inventory->OnSwapItem.Broadcast(PayloadSlot, CurrentSlot);
+	PayloadSlot->Inventory->OnAnyChange.Broadcast();
 }
 
 void UInventoryComponent::SetCapacity(int32 NewCapacity)
@@ -216,6 +224,7 @@ void UInventoryComponent::SetCapacity(int32 NewCapacity)
 	}
 
 	OnSetCapacity.Broadcast(NewCapacity);
+	OnAnyChange.Broadcast();
 }
 
 bool UInventoryComponent::Contains(UInventorySlot* Slot)
@@ -257,6 +266,20 @@ bool UInventoryComponent::CanAddItems(TArray<FItemRow>& OutItems)
 	}
 
 	return NumItems <= GetRemainSlots();
+}
+
+int32 UInventoryComponent::Count(FItemRow Row)
+{
+	int32 NumItems = 0;
+	for (auto & Slot : Inventory)
+	{
+		if (Slot->Row == Row)
+		{
+			NumItems += Slot->Amount;
+		}
+	}
+
+	return NumItems;
 }
 
 int32 UInventoryComponent::GetRemainSlots()

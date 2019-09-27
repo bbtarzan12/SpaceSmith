@@ -56,4 +56,21 @@ ASpaceSmithGameMode::ASpaceSmithGameMode()
 			}
 		}
 	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> ManufacturerCraftingRuleDataTableFinder(TEXT("DataTable'/Game/SpaceSmith/Data/DataTable/DT_ManufacturerRule'"));
+	if (ManufacturerCraftingRuleDataTableFinder.Succeeded())
+	{
+		ManufacturerCraftingRuleDataTable = ManufacturerCraftingRuleDataTableFinder.Object;
+
+		TArray<FCraftingRuleRow*> Rows;
+		ManufacturerCraftingRuleDataTable->GetAllRows<FCraftingRuleRow>(TEXT("Can not find FCraftingRuleRow"), Rows);
+
+		for (auto & Row : Rows)
+		{
+			if (Row)
+			{
+				ManufacturerCraftingRules.Emplace(*Row);
+			}
+		}
+	}
 }

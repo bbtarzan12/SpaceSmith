@@ -29,7 +29,7 @@ bool UPlayerInventoryEntry::NativeOnDrop(const FGeometry& InGeometry, const FDra
 	if (UInventorySlotDragOperation* DropOperation = Cast<UInventorySlotDragOperation>(InOperation))
 	{
 		UInventorySlot* ItemSlot2 = Cast<UInventorySlot>(DropOperation->Payload);
-		ItemSlot2->Inventory->SwapItem(ItemSlot, ItemSlot2);
+		UInventoryComponent::SwapItem(ItemSlot, ItemSlot2);
 		return true;
 	}
 	return false;

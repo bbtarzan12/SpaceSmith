@@ -323,7 +323,7 @@ bool ASpaceSmithCharacterController::DropItemToWorld(UInventorySlot* Slot, int32
 
 bool ASpaceSmithCharacterController::SwapItem(UInventorySlot* Slot1, UInventorySlot* Slot2)
 {
-	Inventory->SwapItem(Slot1, Slot2);
+	UInventoryComponent::SwapItem(Slot1, Slot2);
 	return true;
 }
 

@@ -18,10 +18,8 @@ UTexture2D* UInventoryAddInformationEntry::GetImage() const
 	{
 		return Information->Row.Thumbnail;
 	}
-	else
-	{
-		return UTexture2D::CreateTransient(64, 64);
-	}
+
+	return nullptr;
 }
 
 FText UInventoryAddInformationEntry::GetName() const

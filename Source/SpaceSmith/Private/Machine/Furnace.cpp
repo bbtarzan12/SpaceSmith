@@ -84,7 +84,7 @@ void AFurnace::Crafting()
 				TArray<FItemRow> OutItems;
 				TMap<FItemRow, int32> InInformation;
 				TMap<FItemRow, int32> OutInformation;
-				for (auto & Pair : Rule.Rule.Out)
+				for (auto & Pair : Rule.Info.Out)
 				{
 					if (FItemRow* Row = Pair.Handle.GetRow<FItemRow>(TEXT("")))
 					{
@@ -96,7 +96,7 @@ void AFurnace::Crafting()
 					continue;
 
 				bool HasAllItems = true;
-				for (auto & Pair : Rule.Rule.In)
+				for (auto & Pair : Rule.Info.In)
 				{
 					if (FItemRow* Row = Pair.Handle.GetRow<FItemRow>(TEXT("")))
 					{

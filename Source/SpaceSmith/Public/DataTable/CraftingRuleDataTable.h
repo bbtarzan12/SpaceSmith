@@ -40,7 +40,7 @@ struct FCraftingRuleRow : public FTableRowBase
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FCraftingRule Rule;
+	FCraftingRule Info;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float RequireEnergy;

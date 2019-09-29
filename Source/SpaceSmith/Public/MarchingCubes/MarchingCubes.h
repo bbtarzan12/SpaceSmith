@@ -23,7 +23,7 @@ public:
 		float IsoValue,
 		const FIntVector& ChunkStartSize,
 		const FIntVector& ChunkEndSize,
-		const FVector& ChunkLocation,
+		const FIntVector& ChunkLocation,
 		const FVector& ChunkScale,
 		const FTransform& TerrainTransform,
 
@@ -34,6 +34,9 @@ public:
 		TArray<FLinearColor>& VertexColors,
 		TArray<FProcMeshTangent>& Tangents
 	);
+
+private:
+	static FVector VectorInterp(float IsoValue, FVector P1, FVector P2, float ValueP1, float ValueP2);
 
 private:
 	static const int32 EdgeTable[256];

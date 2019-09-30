@@ -28,7 +28,7 @@ I only request that you mention me in the credits for your game in the way that 
 UCLASS()
 class SIMPLEXNOISE_API USimplexNoiseBPLibrary : public UBlueprintFunctionLibrary
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
 private:
 
 	static unsigned char perm[];

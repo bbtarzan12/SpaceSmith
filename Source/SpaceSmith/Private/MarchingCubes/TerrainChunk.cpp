@@ -9,9 +9,3 @@ UTerrainChunk::UTerrainChunk()
 	bUpdating = false;
 	bHasChanges = false;
 }
-
-void UTerrainChunk::RegenerateChunkMesh()
-{
-	if (Generator)
-		Generator->UpdateChunk(ChunkLocation);
-}

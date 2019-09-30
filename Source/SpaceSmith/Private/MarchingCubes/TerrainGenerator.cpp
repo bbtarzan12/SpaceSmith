@@ -6,6 +6,7 @@
 #include <../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h>
 #include "MarchingCubes/TerrainChunk.h"
 #include "MarchingCubes/TerrainGrid.h"
+#include "../Plugins/SimplexNoise/Source/SimplexNoise/Public/SimplexNoiseBPLibrary.h"
 
 // Sets default values
 ATerrainGenerator::ATerrainGenerator()
@@ -23,7 +24,38 @@ ATerrainGenerator::ATerrainGenerator()
 void ATerrainGenerator::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	for (int32 X = 0; X < 5; X++)
+	{
+		for (int32 Y = 0; Y < 5; Y++)
+		{
+			for (int32 Z = -1; Z <= 1; Z++)
+			{
+				for (int32 GridX = 0; GridX < ChunkSize.X; GridX++)
+				{
+					for (int32 GridY = 0; GridY < ChunkSize.Y; GridY++)
+					{
+						for (int32 GridZ = 0; GridZ < ChunkSize.Z; GridZ++)
+						{
+							int32 SampleX = GridX + ChunkSize.X * X;
+							int32 SampleY = GridY + ChunkSize.Y * Y;
+							int32 SampleZ = GridZ + ChunkSize.Z * Z;
+
+							float Density = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -5.0f, 5.0f, 0.003f);
+							Density += USimplexNoiseBPLibrary::SimplexNoiseInRange3D(SampleX, SampleY, SampleZ, -3.0f, 3.0f, 0.07f);
+							Density *= USimplexNoiseBPLibrary::SimplexNoiseInRange3D(SampleX, SampleY, SampleZ, -0.5f, 0.5f, 0.03f);
+
+							if(Density < SampleZ)
+								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), 1);
+							else
+								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), -1);
+
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 // Called every frame
@@ -50,7 +82,7 @@ void ATerrainGenerator::Tick(float DeltaTime)
 			return;
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Chunk Dequeue with %d Vertices"), FinishedWork.Vertices.Num()));
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Chunk(%s) Dequeue with %d Vertices"), *FinishedWork.ChunkLocation.ToString(), FinishedWork.Vertices.Num()));
 		UTerrainChunk *TerrainChunk = *FoundChunk;
 		TArray<FVector2D> UVs;
 		TArray<FColor> VertexColors;
@@ -134,6 +166,7 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 	if (TerrainChunk->bUpdating)
 	{
 		// 청크가 이미 업데이트 중이면 하지 않는다
+		TerrainChunk->bHasChanges = true;
 		return false;
 	}
 
@@ -166,7 +199,7 @@ bool ATerrainGenerator::DestroyChunk(FIntVector ChunkLocation)
 	return true;
 }
 
-bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool CreateIfNotExists)
+bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bCreateIfNotExists)
 {
 	Grid->SetVoxel(GridLocation, Value);
 
@@ -195,15 +228,14 @@ bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool Crea
 	UTerrainChunk* TerrainChunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
 	if (!TerrainChunk)
 	{
-		if (CreateIfNotExists)
+		if (bCreateIfNotExists)
 		{
 			CreateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
 		}
 		return false;
 	}
 
-	TerrainChunk->bHasChanges = true;
-	TerrainChunk->RegenerateChunkMesh();
+	UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
 
 	return true;
 }
@@ -215,4 +247,3 @@ float ATerrainGenerator::GetVoxel(FIntVector GridLocation)
 
 	return 0;
 }
-

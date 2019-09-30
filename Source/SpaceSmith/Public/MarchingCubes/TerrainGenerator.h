@@ -31,7 +31,7 @@ public:
 	bool DestroyChunk(FIntVector ChunkLocation);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
-	bool SetVoxel(FIntVector GridLocation, float Value, bool CreateIfNotExists);
+	bool SetVoxel(FIntVector GridLocation, float Value, bool bCreateIfNotExists = true);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	float GetVoxel(FIntVector GridLocation);

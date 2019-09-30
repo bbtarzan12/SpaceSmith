@@ -6,6 +6,8 @@
 #include <Runnable.h>
 #include <../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h>
 
+DECLARE_STATS_GROUP(TEXT("Terrain Worker"), STATGROUP_TerrainWorker, STATCAT_Advanced);
+
 class UTerrainData;
 
 struct FTerrainWorkerInformation
@@ -29,7 +31,6 @@ struct FTerrainWorkerInformation
  */
 class SPACESMITH_API FTerrainWorker : public FRunnable
 {
-
 public:
 	FTerrainWorker();
 	virtual ~FTerrainWorker();
@@ -37,14 +38,14 @@ public:
 	void EnsureCompletion();
 	void Shutdown();
 
-
 	bool Start();
+
 	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 
 private:
-	static int32 GenerateSurface
+	int32 GenerateSurface
 	(
 		UTerrainData* Grid,
 		float IsoValue,
@@ -72,6 +73,7 @@ public:
 private:
 	FThreadSafeCounter StopTaskCounter;
 	FRunnableThread* Thread;
+
 	bool bRunning;
 
 	static const int32 EdgeTable[256];

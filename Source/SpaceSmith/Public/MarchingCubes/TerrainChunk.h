@@ -17,8 +17,6 @@ class SPACESMITH_API UTerrainChunk : public UProceduralMeshComponent
 public:
 	UTerrainChunk();
 
-	void RegenerateChunkMesh();
-
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
 	FIntVector ChunkLocation;

@@ -4,6 +4,9 @@
 #include "TerrainWorker.h"
 #include <DynamicMeshBuilder.h>
 #include "MarchingCubes/TerrainGrid.h"
+#include "Runtime/Core/Public/Async/ParallelFor.h"
+
+DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes"), STAT_PerformMarchingCubes, STATGROUP_TerrainWorker);
 
 FTerrainWorker::FTerrainWorker() : StopTaskCounter(0), Thread(nullptr), bRunning(false)
 {
@@ -86,6 +89,7 @@ void FTerrainWorker::Stop()
 
 int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
 {
+	SCOPE_CYCLE_COUNTER( STAT_PerformMarchingCubes );
 	TArray<FVector> Positions;
 	FIntVector ChunkStartSize = FIntVector(ChunkLocation.X * ChunkSize.X, ChunkLocation.Y * ChunkSize.Y, ChunkLocation.Z * ChunkSize.Z);
 	FIntVector ChunkEndSize = FIntVector((ChunkLocation.X + 1)* ChunkSize.X, (ChunkLocation.Y + 1) * ChunkSize.Y, (ChunkLocation.Z + 1) * ChunkSize.Z);
@@ -187,6 +191,7 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, float IsoValue, const 
 					InterpolatedValues[11] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P2, P6);
 				}
 
+				// IntersectBitMap을 삼각형 룩업 테이블의 인덱스로 사용하도록 설정
 				IntersectBitMap <<= 4;
 
 				int32 TriangleIndex = 0;
@@ -291,7 +296,6 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, float IsoValue, const 
 			VertexColors[Indices[Index + I]] = FColor(1, 1, 1, 1);
 		}
 	}
-
 	return NumTriangles;
 }
 

@@ -9,10 +9,12 @@
 DECLARE_STATS_GROUP(TEXT("Terrain Worker"), STATGROUP_TerrainWorker, STATCAT_Advanced);
 
 class UTerrainData;
+class UTerrainChunk;
 
 struct FTerrainWorkerInformation
 {
 	UTerrainData* Grid;
+	UTerrainChunk* Chunk;
 	FIntVector ChunkLocation;
 	FIntVector ChunkSize;
 	FVector ChunkScale;
@@ -24,6 +26,7 @@ struct FTerrainWorkerInformation
 	TArray<FVector2D> UVs;
 	TArray<FColor> VertexColors;
 	TArray<FProcMeshTangent> Tangents;
+	bool bValid;
 };
 
 /**
@@ -44,10 +47,10 @@ public:
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 
-private:
-	int32 GenerateSurface
+	static int32 GenerateSurface
 	(
 		UTerrainData* Grid,
+		UTerrainChunk* Chunk,
 		float IsoValue,
 		const FIntVector& ChunkLocation,
 		const FIntVector& ChunkSize,
@@ -61,6 +64,7 @@ private:
 		TArray<FProcMeshTangent>& Tangents
 	);
 
+private:
 	static FVector VectorInterp(float IsoValue, FVector P1, FVector P2, float ValueP1, float ValueP2);
 
 public:

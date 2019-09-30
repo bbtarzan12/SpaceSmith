@@ -3,8 +3,9 @@
 
 #include "TerrainWorker.h"
 #include <DynamicMeshBuilder.h>
-#include "MarchingCubes/TerrainGrid.h"
+#include "MarchingCubes/TerrainData.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
+#include "MarchingCubes/TerrainChunk.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes"), STAT_PerformMarchingCubes, STATGROUP_TerrainWorker);
 
@@ -65,14 +66,19 @@ uint32 FTerrainWorker::Run()
 	{
 		if (QueuedWorks.IsEmpty())
 		{
-			FPlatformProcess::Sleep(0.03f);
+			//FPlatformProcess::Sleep(0.03f);
+
 			continue;
 		}
 
 		FTerrainWorkerInformation WorkerInformation;
 		QueuedWorks.Dequeue(WorkerInformation);
 
-		GenerateSurface(WorkerInformation.Grid, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
+		int32 NumTriangles = GenerateSurface(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
+		if (NumTriangles == -1)
+			WorkerInformation.bValid = false;
+		else
+			WorkerInformation.bValid = true;
 		FinishedWorks.Enqueue(WorkerInformation);
 	}
 	bRunning = false;
@@ -87,7 +93,7 @@ void FTerrainWorker::Stop()
 	StopTaskCounter.Increment();
 }
 
-int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
+int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
 {
 	SCOPE_CYCLE_COUNTER( STAT_PerformMarchingCubes );
 	TArray<FVector> Positions;
@@ -101,6 +107,11 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, float IsoValue, const 
 		{
 			for (int32 Z = ChunkStartSize.Z; Z < ChunkEndSize.Z; Z++)
 			{
+				if (Chunk->bHasChanges)
+				{
+					return -1;
+				}
+
 				// 큐브 꼭짓점의 값
 				float P0 = Grid->GetVoxel(FIntVector(X, Y, Z));
 				float P1 = Grid->GetVoxel(FIntVector(X + 1, Y, Z));
@@ -115,17 +126,17 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, float IsoValue, const 
 				// 각 꼭짓점의 값이 IsoLevel과 비교해서 Surface 안쪽인지 확인
 				int32 IntersectBitMap = 0;
 
-				if (P0 < IsoValue) IntersectBitMap |= 1;
-				if (P1 < IsoValue) IntersectBitMap |= 2;
+				if (P0 > IsoValue) IntersectBitMap |= 1;
+				if (P1 > IsoValue) IntersectBitMap |= 2;
 
-				if (P2 < IsoValue) IntersectBitMap |= 8;
-				if (P3 < IsoValue) IntersectBitMap |= 4;
+				if (P2 > IsoValue) IntersectBitMap |= 8;
+				if (P3 > IsoValue) IntersectBitMap |= 4;
 
-				if (P4 < IsoValue) IntersectBitMap |= 16;
-				if (P5 < IsoValue) IntersectBitMap |= 32;
+				if (P4 > IsoValue) IntersectBitMap |= 16;
+				if (P5 > IsoValue) IntersectBitMap |= 32;
 
-				if (P6 < IsoValue) IntersectBitMap |= 128;
-				if (P7 < IsoValue) IntersectBitMap |= 64;
+				if (P6 > IsoValue) IntersectBitMap |= 128;
+				if (P7 > IsoValue) IntersectBitMap |= 64;
 
 				int32 EdgeBits = EdgeTable[IntersectBitMap];
 

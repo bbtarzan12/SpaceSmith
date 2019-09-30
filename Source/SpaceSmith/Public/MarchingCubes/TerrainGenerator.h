@@ -31,10 +31,25 @@ public:
 	bool DestroyChunk(FIntVector ChunkLocation);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
-	bool SetVoxel(FIntVector GridLocation, float Value, bool bCreateIfNotExists = true);
+	bool SetVoxel(FIntVector GridLocation, float Value, bool bLateUpdate = false);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	void SetVoxels(const TArray<FIntVector>& GridLocations, float Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	bool AddVoxel(FIntVector GridLocation, float Value, bool bLateUpdate = false);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	void AddVoxels(const TArray<FIntVector>& GridLocations, float Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	float GetVoxel(FIntVector GridLocation);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	void UpdateTerrain();
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	FIntVector WorldToGrid(FVector WorldLocation);
 
 protected:
 	virtual void BeginPlay() override;

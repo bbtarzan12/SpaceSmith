@@ -5,7 +5,7 @@
 #include "MarchingCubes/TerrainWorker.h"
 #include <../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h>
 #include "MarchingCubes/TerrainChunk.h"
-#include "MarchingCubes/TerrainGrid.h"
+#include "MarchingCubes/TerrainData.h"
 #include "../Plugins/SimplexNoise/Source/SimplexNoise/Public/SimplexNoiseBPLibrary.h"
 
 // Sets default values
@@ -13,17 +13,17 @@ ATerrainGenerator::ATerrainGenerator()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	Worker = new FTerrainWorker();
-	Worker->Start();
-
-	Grid = new UTerrainData();
 }
 
 // Called when the game starts or when spawned
 void ATerrainGenerator::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Worker = new FTerrainWorker();
+	Worker->Start();
+
+	Grid = new UTerrainData();
 
 	for (int32 X = 0; X < 5; X++)
 	{
@@ -45,17 +45,18 @@ void ATerrainGenerator::BeginPlay()
 							Density += USimplexNoiseBPLibrary::SimplexNoiseInRange3D(SampleX, SampleY, SampleZ, -3.0f, 3.0f, 0.07f);
 							Density *= USimplexNoiseBPLibrary::SimplexNoiseInRange3D(SampleX, SampleY, SampleZ, -0.5f, 0.5f, 0.03f);
 
-							if(Density < SampleZ)
-								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), 1);
+							if(Density > SampleZ)
+								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), 1, true);
 							else
-								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), -1);
-
+								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), -1, true);
 						}
 					}
 				}
 			}
 		}
 	}
+
+	UpdateTerrain();
 }
 
 // Called every frame
@@ -81,14 +82,22 @@ void ATerrainGenerator::Tick(float DeltaTime)
 		{
 			return;
 		}
+		UTerrainChunk *TerrainChunk = *FoundChunk;
+		TerrainChunk->bUpdating = false;
+
+		if (!FinishedWork.bValid)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("This Chunk has Changes, Skip and Regenerate")));
+			UpdateChunk(TerrainChunk->ChunkLocation);
+			return;
+		}
 
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Chunk(%s) Dequeue with %d Vertices"), *FinishedWork.ChunkLocation.ToString(), FinishedWork.Vertices.Num()));
-		UTerrainChunk *TerrainChunk = *FoundChunk;
 		TArray<FVector2D> UVs;
 		TArray<FColor> VertexColors;
+
 		TerrainChunk->ClearAllMeshSections();
 		TerrainChunk->CreateMeshSection(0, FinishedWork.Vertices, FinishedWork.Indices, FinishedWork.Normals, FinishedWork.UVs, FinishedWork.VertexColors, FinishedWork.Tangents, true);
-		TerrainChunk->bUpdating = false;
 
 		if (TerrainChunk->bHasChanges)
 		{
@@ -138,8 +147,8 @@ bool ATerrainGenerator::CreateChunk(FIntVector ChunkLocation)
 
 	NewChunk->Generator = this;
 	NewChunk->ChunkLocation = ChunkLocation;
+	NewChunk->bHasChanges = true;
 	Chunks.Add(ChunkLocation, NewChunk);
-	UpdateChunk(ChunkLocation);
 	return true;
 }
 
@@ -165,7 +174,7 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 	UTerrainChunk *TerrainChunk = *FoundChunk;
 	if (TerrainChunk->bUpdating)
 	{
-		// 청크가 이미 업데이트 중이면 하지 않는다
+		// 청크가 이미 업데이트 중이면 하지 않고, 다음에 업데이트 한다
 		TerrainChunk->bHasChanges = true;
 		return false;
 	}
@@ -175,10 +184,12 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 
 	FTerrainWorkerInformation Information;
 	Information.Grid = Grid;
+	Information.Chunk = TerrainChunk;
 	Information.ChunkLocation = ChunkLocation;
 	Information.ChunkScale = ChunkScale;
 	Information.ChunkSize = ChunkSize;
 	Information.IsoValue = IsoValue;
+
 	Worker->QueuedWorks.Enqueue(Information);
 	return true;
 }
@@ -199,7 +210,7 @@ bool ATerrainGenerator::DestroyChunk(FIntVector ChunkLocation)
 	return true;
 }
 
-bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bCreateIfNotExists)
+bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLateUpdate)
 {
 	Grid->SetVoxel(GridLocation, Value);
 
@@ -207,37 +218,194 @@ bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bCre
 	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
 	int32 ChunkZ = FMath::FloorToInt((float)GridLocation.Z / ChunkSize.Z);
 
+	UTerrainChunk* TerrainChunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+	if (!TerrainChunk)
+	{
+		CreateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+		return false;
+	}
+
 	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
 	{
-		UpdateChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ));
-		UpdateChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ));
+		if (bLateUpdate)
+		{
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+		else
+		{
+			UpdateChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ));
+			UpdateChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ));
+		}
 	}
 
 	if (FMath::Fmod(GridLocation.Y, ChunkSize.Y) == 0.0f)
 	{
-		UpdateChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ));
-		UpdateChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ));
+		if (bLateUpdate)
+		{
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+		else
+		{
+			UpdateChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ));
+			UpdateChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ));
+		}
 	}
 
 	if (FMath::Fmod(GridLocation.Z, ChunkSize.Z) == 0.0f)
 	{
-		UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1));
-		UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1));
+		if (bLateUpdate)
+		{
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1)))
+			{
+				Chunk->bHasChanges = true;
+			}
+
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1)))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+		else
+		{
+			UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1));
+			UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1));
+		}
 	}
+
+	if (bLateUpdate)
+	{
+		TerrainChunk->bHasChanges = true;
+	}
+	else
+	{
+		UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+	}
+	return true;
+}
+
+void ATerrainGenerator::SetVoxels(const TArray<FIntVector>& GridLocations, float Value)
+{
+	for (auto & GridLocation : GridLocations)
+	{
+		SetVoxel(GridLocation, Value, true);
+	}
+
+	UpdateTerrain();
+}
+
+bool ATerrainGenerator::AddVoxel(FIntVector GridLocation, float Value, bool bLateUpdate /*= false*/)
+{
+	Grid->AddVoxel(GridLocation, Value);
+
+	int32 ChunkX = FMath::FloorToInt((float)GridLocation.X / ChunkSize.X);
+	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
+	int32 ChunkZ = FMath::FloorToInt((float)GridLocation.Z / ChunkSize.Z);
 
 	UTerrainChunk* TerrainChunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
 	if (!TerrainChunk)
 	{
-		if (bCreateIfNotExists)
-		{
-			CreateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
-		}
+		CreateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
 		return false;
 	}
 
-	UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
+	{
+		if (bLateUpdate)
+		{
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
 
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+		else
+		{
+			UpdateChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ));
+			UpdateChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ));
+		}
+	}
+
+	if (FMath::Fmod(GridLocation.Y, ChunkSize.Y) == 0.0f)
+	{
+		if (bLateUpdate)
+		{
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ)))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+		else
+		{
+			UpdateChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ));
+			UpdateChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ));
+		}
+	}
+
+	if (FMath::Fmod(GridLocation.Z, ChunkSize.Z) == 0.0f)
+	{
+		if (bLateUpdate)
+		{
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1)))
+			{
+				Chunk->bHasChanges = true;
+			}
+
+			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1)))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+		else
+		{
+			UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1));
+			UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1));
+		}
+	}
+
+	if (bLateUpdate)
+	{
+		TerrainChunk->bHasChanges = true;
+	}
+	else
+	{
+		UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+	}
 	return true;
+}
+
+void ATerrainGenerator::AddVoxels(const TArray<FIntVector>& GridLocations, float Value)
+{
+	for (auto & GridLocation : GridLocations)
+	{
+		AddVoxel(GridLocation, Value, true);
+	}
+
+	UpdateTerrain();
 }
 
 float ATerrainGenerator::GetVoxel(FIntVector GridLocation)
@@ -246,4 +414,24 @@ float ATerrainGenerator::GetVoxel(FIntVector GridLocation)
 		return Grid->GetVoxel(GridLocation);
 
 	return 0;
+}
+
+void ATerrainGenerator::UpdateTerrain()
+{
+	for (const TPair<FIntVector, UTerrainChunk*> Chunk : Chunks)
+	{
+		if (Chunk.Value->bHasChanges)
+		{
+			UpdateChunk(Chunk.Key);
+		}
+	}
+}
+
+FIntVector ATerrainGenerator::WorldToGrid(FVector WorldLocation)
+{
+	int32 GridX = FMath::FloorToInt(WorldLocation.X / ChunkScale.X);
+	int32 GridY = FMath::FloorToInt(WorldLocation.Y / ChunkScale.Y);
+	int32 GridZ = FMath::FloorToInt(WorldLocation.Z / ChunkScale.Z);
+
+	return FIntVector(GridX, GridY, GridZ);
 }

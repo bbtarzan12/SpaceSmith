@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include <Runnable.h>
 #include <../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h>
+#include "TerrainGenerator.h"
 
 DECLARE_STATS_GROUP(TEXT("Terrain Worker"), STATGROUP_TerrainWorker, STATCAT_Advanced);
 
@@ -13,6 +14,7 @@ class UTerrainChunk;
 
 struct FTerrainWorkerInformation
 {
+	ATerrainGenerator* Generator;
 	UTerrainData* Grid;
 	UTerrainChunk* Chunk;
 	FIntVector ChunkLocation;
@@ -64,21 +66,35 @@ public:
 		TArray<FProcMeshTangent>& Tangents
 	);
 
+	void Enqueue(FTerrainWorkerInformation Work);
+	bool Dequeue(FTerrainWorkerInformation& Work);
+
 private:
 	static FVector VectorInterp(float IsoValue, FVector P1, FVector P2, float ValueP1, float ValueP2);
 
 public:
 	// 贸府且 没农狼 沥焊
-	TQueue <FTerrainWorkerInformation> QueuedWorks;
+	TArray<FTerrainWorkerInformation> QueuedWorks;
 
 	// 贸府啊 场抄 没农狼 沥焊
-	TQueue <FTerrainWorkerInformation> FinishedWorks;
+	TArray<FTerrainWorkerInformation> FinishedWorks;
 
 private:
+	struct ChunkInformationPredicate
+	{
+		bool operator()(const FTerrainWorkerInformation& A, const FTerrainWorkerInformation& B) const
+		{
+			float DistanceA = (A.Generator->GetPlayerChunkPosition() - A.ChunkLocation).Size();
+			float DistanceB = (B.Generator->GetPlayerChunkPosition() - B.ChunkLocation).Size();
+			return DistanceA < DistanceB;
+		}
+	};
+
 	FThreadSafeCounter StopTaskCounter;
 	FRunnableThread* Thread;
 
 	bool bRunning;
+	FCriticalSection Mutex;
 
 	static const int32 EdgeTable[256];
 	static const int32 TriTable[];

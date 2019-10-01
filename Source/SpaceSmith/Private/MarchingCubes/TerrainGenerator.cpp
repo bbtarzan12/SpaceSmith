@@ -161,13 +161,13 @@ void ATerrainGenerator::GenerateChunkMesh()
 		return;
 	}
 
-	if (TerrainWorker->FinishedWorks.IsEmpty())
+	if (TerrainWorker->FinishedWorks.Num() == 0)
 	{
 		return;
 	}
 
 	FTerrainWorkerInformation FinishedWork;
-	if (TerrainWorker->FinishedWorks.Dequeue(FinishedWork))
+	if (TerrainWorker->Dequeue(FinishedWork))
 	{
 		UTerrainChunk** FoundChunk = Chunks.Find(FinishedWork.ChunkLocation);
 		if (!FoundChunk)
@@ -276,8 +276,9 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 	Information.ChunkScale = ChunkScale;
 	Information.ChunkSize = ChunkSize;
 	Information.IsoValue = IsoValue;
+	Information.Generator = this;
 
-	TerrainWorker->QueuedWorks.Enqueue(Information);
+	TerrainWorker->Enqueue(Information);
 	return true;
 }
 

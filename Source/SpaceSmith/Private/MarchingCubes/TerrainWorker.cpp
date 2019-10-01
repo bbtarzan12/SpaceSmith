@@ -64,21 +64,25 @@ uint32 FTerrainWorker::Run()
 	bRunning = true;
 	while (StopTaskCounter.GetValue() == 0)
 	{
-		if (QueuedWorks.IsEmpty())
+		if (QueuedWorks.Num() == 0)
 		{
 			continue;
 		}
 
 		FTerrainWorkerInformation WorkerInformation;
-		if (QueuedWorks.Dequeue(WorkerInformation))
-		{
-			int32 NumTriangles = GenerateSurface(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
-			if (NumTriangles == -1)
-				WorkerInformation.bValid = false;
-			else
-				WorkerInformation.bValid = true;
-			FinishedWorks.Enqueue(WorkerInformation);
-		}
+		Mutex.Lock();
+		QueuedWorks.HeapPop(WorkerInformation, ChunkInformationPredicate());
+		Mutex.Unlock();
+
+		int32 NumTriangles = GenerateSurface(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
+		if (NumTriangles == -1)
+			WorkerInformation.bValid = false;
+		else
+			WorkerInformation.bValid = true;
+
+		Mutex.Lock();
+		FinishedWorks.HeapPush(WorkerInformation, ChunkInformationPredicate());
+		Mutex.Unlock();
 	}
 	bRunning = false;
 	return 0;
@@ -307,6 +311,23 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, 
 		}
 	}
 	return NumTriangles;
+}
+
+void FTerrainWorker::Enqueue(FTerrainWorkerInformation Work)
+{
+	Mutex.Lock();
+	QueuedWorks.HeapPush(Work, ChunkInformationPredicate());
+	Mutex.Unlock();
+}
+
+bool FTerrainWorker::Dequeue(FTerrainWorkerInformation& Work)
+{
+	if (FinishedWorks.Num() == 0)
+		return false;
+	Mutex.Lock();
+	FinishedWorks.HeapPop(Work, ChunkInformationPredicate());
+	Mutex.Unlock();
+	return true;
 }
 
 FVector FTerrainWorker::VectorInterp(float IsoValue, FVector P1, FVector P2, float ValueP1, float ValueP2)

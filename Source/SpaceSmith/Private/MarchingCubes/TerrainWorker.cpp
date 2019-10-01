@@ -6,6 +6,7 @@
 #include "MarchingCubes/TerrainData.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "MarchingCubes/TerrainChunk.h"
+#include "MarchingCubes/TerrainGenerator.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes"), STAT_PerformMarchingCubes, STATGROUP_TerrainWorker);
 
@@ -74,7 +75,7 @@ uint32 FTerrainWorker::Run()
 		QueuedWorks.HeapPop(WorkerInformation, ChunkInformationPredicate());
 		Mutex.Unlock();
 
-		int32 NumTriangles = GenerateSurface(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
+		int32 NumTriangles = GenerateSurfaceByMarchingCubes(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
 		if (NumTriangles == -1)
 			WorkerInformation.bValid = false;
 		else
@@ -96,7 +97,7 @@ void FTerrainWorker::Stop()
 	StopTaskCounter.Increment();
 }
 
-int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
+int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrainChunk* Chunk, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FLinearColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
 {
 	SCOPE_CYCLE_COUNTER( STAT_PerformMarchingCubes );
 	TArray<FVector> Positions;
@@ -125,7 +126,6 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, 
 				float P6 = Grid->GetVoxel(FIntVector(X, Y + 1, Z + 1));
 				float P7 = Grid->GetVoxel(FIntVector(X + 1, Y + 1, Z + 1));
 
-
 				// 각 꼭짓점의 값이 IsoLevel과 비교해서 Surface 안쪽인지 확인
 				int32 IntersectBitMap = 0;
 
@@ -147,62 +147,61 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, 
 				if (EdgeBits == 0)
 					continue;
 
-				float InterpolatedIntersectPoint = 0;
-				FVector InterpolatedValues[12];
+				FVector InterpolatedPoints[12];
 
 				//아래 Edge
 				if ((EdgeBits & 1) > 0)
 				{
-					InterpolatedValues[0] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), P0, P1);
+					InterpolatedPoints[0] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), P0, P1);
 				}
 				if ((EdgeBits & 2) > 0)
 				{
-					InterpolatedValues[1] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P1, P3);
+					InterpolatedPoints[1] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P1, P3);
 				}
 				if ((EdgeBits & 4) > 0)
 				{
-					InterpolatedValues[2] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P2, P3);
+					InterpolatedPoints[2] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P2, P3);
 
 				}
 				if ((EdgeBits & 8) > 0)
 				{
-					InterpolatedValues[3] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P0, P2);
+					InterpolatedPoints[3] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P0, P2);
 				}
 
 				//위 Edge
 				if ((EdgeBits & 16) > 0)
 				{
-					InterpolatedValues[4] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P4, P5);
+					InterpolatedPoints[4] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P4, P5);
 				}
 				if ((EdgeBits & 32) > 0)
 				{
-					InterpolatedValues[5] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P5, P7);
+					InterpolatedPoints[5] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P5, P7);
 				}
 				if ((EdgeBits & 64) > 0)
 				{
-					InterpolatedValues[6] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P6, P7);
+					InterpolatedPoints[6] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P6, P7);
 				}
 				if ((EdgeBits & 128) > 0)
 				{
-					InterpolatedValues[7] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P4, P6);
+					InterpolatedPoints[7] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P4, P6);
 				}
 
 				//옆면 Edge
 				if ((EdgeBits & 256) > 0)
 				{
-					InterpolatedValues[8] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P0, P4);
+					InterpolatedPoints[8] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P0, P4);
 				}
 				if ((EdgeBits & 512) > 0)
 				{
-					InterpolatedValues[9] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P1, P5);
+					InterpolatedPoints[9] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P1, P5);
 				}
 				if ((EdgeBits & 1024) > 0)
 				{
-					InterpolatedValues[10] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P3, P7);
+					InterpolatedPoints[10] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P3, P7);
 				}
 				if ((EdgeBits & 2048) > 0)
 				{
-					InterpolatedValues[11] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P2, P6);
+					InterpolatedPoints[11] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P2, P6);
 				}
 
 				// IntersectBitMap을 삼각형 룩업 테이블의 인덱스로 사용하도록 설정
@@ -220,15 +219,15 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, 
 					FDynamicMeshVertex Vertex1;
 					FDynamicMeshVertex Vertex2;
 
-					Vertex0.Position = ChunkScale * (InterpolatedValues[Index1] - FVector(ChunkLocation));
+					Vertex0.Position = ChunkScale * (InterpolatedPoints[Index1] - FVector(ChunkLocation));
 					Vertex0.TextureCoordinate[0].X = Vertex0.Position.X / 100.0f;
 					Vertex0.TextureCoordinate[0].Y = Vertex0.Position.Y / 100.0f;
 
-					Vertex1.Position = ChunkScale * (InterpolatedValues[Index2] - FVector(ChunkLocation));
+					Vertex1.Position = ChunkScale * (InterpolatedPoints[Index2] - FVector(ChunkLocation));
 					Vertex1.TextureCoordinate[0].X = Vertex1.Position.X / 100.0f;
 					Vertex1.TextureCoordinate[0].Y = Vertex1.Position.Y / 100.0f;
 
-					Vertex2.Position = ChunkScale * (InterpolatedValues[Index3] - FVector(ChunkLocation));
+					Vertex2.Position = ChunkScale * (InterpolatedPoints[Index3] - FVector(ChunkLocation));
 					Vertex2.TextureCoordinate[0].X = Vertex2.Position.X / 100.0f;
 					Vertex2.TextureCoordinate[0].Y = Vertex2.Position.Y / 100.0f;
 
@@ -316,6 +315,7 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, 
 void FTerrainWorker::Enqueue(FTerrainWorkerInformation Work)
 {
 	Mutex.Lock();
+	QueuedWorks.RemoveAll([&](const FTerrainWorkerInformation& A) { return A.ChunkLocation == Work.ChunkLocation; });
 	QueuedWorks.HeapPush(Work, ChunkInformationPredicate());
 	Mutex.Unlock();
 }
@@ -341,11 +341,11 @@ FVector FTerrainWorker::VectorInterp(float IsoValue, FVector P1, FVector P2, flo
 	if (FMath::Abs(ValueP1 - ValueP2) < 0.00001f)
 		return P1;
 
-	float MU = (IsoValue - ValueP1) / (ValueP2 - ValueP1);
+	float Mu = (IsoValue - ValueP1) / (ValueP2 - ValueP1);
 	FVector P;
-	P.X = P1.X + MU * (P2.X - P1.X);
-	P.Y = P1.Y + MU * (P2.Y - P1.Y);
-	P.Z = P1.Z + MU * (P2.Z - P1.Z);
+	P.X = P1.X + Mu * (P2.X - P1.X);
+	P.Y = P1.Y + Mu * (P2.Y - P1.Y);
+	P.Z = P1.Z + Mu * (P2.Z - P1.Z);
 	return P;
 }
 
@@ -644,3 +644,10 @@ const int32 FTerrainWorker::TriTable[] =
 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
+
+bool FTerrainWorker::ChunkInformationPredicate::operator()(const FTerrainWorkerInformation& A, const FTerrainWorkerInformation& B) const
+{
+	float DistanceA = (A.Generator->GetPlayerChunkPosition() - A.ChunkLocation).Size();
+	float DistanceB = (B.Generator->GetPlayerChunkPosition() - B.ChunkLocation).Size();
+	return DistanceA < DistanceB;
+}

@@ -5,12 +5,13 @@
 #include "CoreMinimal.h"
 #include <Runnable.h>
 #include <../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h>
-#include "TerrainGenerator.h"
+
 
 DECLARE_STATS_GROUP(TEXT("Terrain Worker"), STATGROUP_TerrainWorker, STATCAT_Advanced);
 
 class UTerrainData;
 class UTerrainChunk;
+class ATerrainGenerator;
 
 struct FTerrainWorkerInformation
 {
@@ -26,7 +27,7 @@ struct FTerrainWorkerInformation
 	TArray<int32> Indices;
 	TArray<FVector> Normals;
 	TArray<FVector2D> UVs;
-	TArray<FColor> VertexColors;
+	TArray<FLinearColor> VertexColors;
 	TArray<FProcMeshTangent> Tangents;
 	bool bValid;
 };
@@ -49,7 +50,7 @@ public:
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 
-	static int32 GenerateSurface
+	static int32 GenerateSurfaceByMarchingCubes
 	(
 		UTerrainData* Grid,
 		UTerrainChunk* Chunk,
@@ -62,7 +63,7 @@ public:
 		TArray<int32>& Indices,
 		TArray<FVector>& Normals,
 		TArray<FVector2D>& UVs,
-		TArray<FColor>& VertexColors,
+		TArray<FLinearColor>& VertexColors,
 		TArray<FProcMeshTangent>& Tangents
 	);
 
@@ -82,12 +83,7 @@ public:
 private:
 	struct ChunkInformationPredicate
 	{
-		bool operator()(const FTerrainWorkerInformation& A, const FTerrainWorkerInformation& B) const
-		{
-			float DistanceA = (A.Generator->GetPlayerChunkPosition() - A.ChunkLocation).Size();
-			float DistanceB = (B.Generator->GetPlayerChunkPosition() - B.ChunkLocation).Size();
-			return DistanceA < DistanceB;
-		}
+		bool operator()(const FTerrainWorkerInformation& A, const FTerrainWorkerInformation& B) const;
 	};
 
 	FThreadSafeCounter StopTaskCounter;

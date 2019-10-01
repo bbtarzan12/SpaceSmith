@@ -9,7 +9,7 @@
 #include "../Plugins/SimplexNoise/Source/SimplexNoise/Public/SimplexNoiseBPLibrary.h"
 #include "SpaceSmithCharacter.h"
 #include "Miscellaneous/UtilityTimer.h"
-#include "MarchingCubes/FTerrainChunkWorker.h"
+#include "MarchingCubes/TerrainChunkWorker.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values
@@ -43,6 +43,7 @@ void ATerrainGenerator::Tick(float DeltaTime)
 	CheckPlayerPosition();
 	GenerateChunk();
 	GenerateChunkMesh();
+	UpdateTerrain();
 
 	if (bDebug)
 	{
@@ -100,8 +101,6 @@ void ATerrainGenerator::CheckPlayerPosition()
 	{
 		CreateChunk(ChunkLocation);
 	}
-
-	UpdateTerrain();
 }
 
 void ATerrainGenerator::GenerateChunk()
@@ -189,7 +188,7 @@ void ATerrainGenerator::GenerateChunkMesh()
 		TArray<FColor> VertexColors;
 
 		TerrainChunk->ClearAllMeshSections();
-		TerrainChunk->CreateMeshSection(0, FinishedWork.Vertices, FinishedWork.Indices, FinishedWork.Normals, FinishedWork.UVs, FinishedWork.VertexColors, FinishedWork.Tangents, true);
+		TerrainChunk->CreateMeshSection_LinearColor(0, FinishedWork.Vertices, FinishedWork.Indices, FinishedWork.Normals, FinishedWork.UVs, FinishedWork.VertexColors, FinishedWork.Tangents, true);
 
 		if (TerrainChunk->HasChanges())
 		{
@@ -393,8 +392,6 @@ void ATerrainGenerator::SetVoxels(const TArray<FIntVector>& GridLocations, float
 	{
 		SetVoxel(GridLocation, Value, true);
 	}
-
-	UpdateTerrain();
 }
 
 bool ATerrainGenerator::AddVoxel(FIntVector GridLocation, float Value, bool bLateUpdate /*= false*/)
@@ -492,8 +489,6 @@ void ATerrainGenerator::AddVoxels(const TArray<FIntVector>& GridLocations, float
 	{
 		AddVoxel(GridLocation, Value, true);
 	}
-
-	UpdateTerrain();
 }
 
 float ATerrainGenerator::GetVoxel(FIntVector GridLocation)

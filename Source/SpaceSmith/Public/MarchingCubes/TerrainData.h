@@ -8,6 +8,7 @@
 struct SPACESMITH_API FVoxel
 {
 	float Density;
+
 	FVoxel(float Value)
 	{
 		Density = Value;

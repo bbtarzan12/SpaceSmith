@@ -106,7 +106,7 @@ int32 FTerrainWorker::GenerateSurface(UTerrainData* Grid, UTerrainChunk* Chunk, 
 		{
 			for (int32 Z = ChunkStartSize.Z; Z < ChunkEndSize.Z; Z++)
 			{
-				if (Chunk->bHasChanges)
+				if (Chunk->HasChanges())
 				{
 					return -1;
 				}

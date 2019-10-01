@@ -55,6 +55,9 @@ public:
 	FIntVector WorldToChunk(FVector WorldLocation);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	FVector ChunkToWorld(FIntVector ChunkLocation);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	FORCEINLINE FIntVector GetPlayerChunkPosition() const;
 
 protected:
@@ -94,5 +97,11 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	FIntVector LastCharacterChunkLocation = FIntVector(-999999, -999999, -999999);
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<FIntVector> CalculatingChunks; // 아직 만들어지지 않고, 계산중인 청크 위치
+
+	UPROPERTY(EditAnywhere)
+	bool bDebug;
 
 };

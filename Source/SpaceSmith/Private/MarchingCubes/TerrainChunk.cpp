@@ -9,3 +9,18 @@ UTerrainChunk::UTerrainChunk()
 	bUpdating = false;
 	bHasChanges = false;
 }
+
+void UTerrainChunk::SetChanges(bool bChanges)
+{
+	Mutex.Lock();
+	bHasChanges = bChanges;
+	Mutex.Unlock();
+}
+
+bool UTerrainChunk::HasChanges()
+{
+	Mutex.Lock();
+	bool bHasLocalChanges = bHasChanges;
+	Mutex.Unlock();
+	return bHasLocalChanges;
+}

@@ -17,6 +17,9 @@ class SPACESMITH_API UTerrainChunk : public UProceduralMeshComponent
 public:
 	UTerrainChunk();
 
+	void SetChanges(bool bChanges);
+	bool HasChanges();
+
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
 	FIntVector ChunkLocation;
@@ -25,8 +28,11 @@ public:
 	bool bUpdating;
 
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
-	bool bHasChanges;
-
-	UPROPERTY(VisibleAnywhere, Category = "Terrain")
 	class ATerrainGenerator* Generator;
+
+	FCriticalSection Mutex;
+
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Terrain")
+	bool bHasChanges;
 };

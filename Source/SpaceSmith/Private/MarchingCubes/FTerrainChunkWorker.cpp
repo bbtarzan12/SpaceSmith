@@ -40,7 +40,7 @@ bool FTerrainChunkWorker::Start()
 {
 	if (FPlatformProcess::SupportsMultithreading())
 	{
-		Thread = FRunnableThread::Create(this, TEXT("TerrainChunkWorkerThread"), 0, TPri_BelowNormal);
+		Thread = FRunnableThread::Create(this, TEXT("TerrainChunkWorkerThread"), 0, TPri_AboveNormal);
 		return true;
 	}
 	else

@@ -51,8 +51,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	FIntVector WorldToGrid(FVector WorldLocation);
 
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	FIntVector WorldToChunk(FVector WorldLocation);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	FORCEINLINE FIntVector GetPlayerChunkPosition() const;
+
 protected:
 	virtual void BeginPlay() override;
+
+private:
+	void CheckPlayerPosition();
+	void GenerateChunk();
+	void GenerateChunkMesh();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
@@ -65,13 +76,23 @@ public:
 	FIntVector ChunkSize;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
+	FIntVector NumSpawnChunk;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 	class UMaterialInterface* TerrainMaterial;
 
 private:
-	class FTerrainWorker* Worker;
+	class FTerrainWorker* TerrainWorker;
+	class FTerrainChunkWorker* ChunkWorker;
 	class UTerrainData* Grid;
 
 	UPROPERTY(VisibleAnywhere)
+	class ASpaceSmithCharacter* Character;
+
+	UPROPERTY(VisibleAnywhere)
 	TMap<FIntVector, UTerrainChunk*> Chunks;
+
+	UPROPERTY(VisibleAnywhere)
+	FIntVector LastCharacterChunkLocation = FIntVector(-999999, -999999, -999999);
 
 };

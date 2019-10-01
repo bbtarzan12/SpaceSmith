@@ -11,7 +11,7 @@ ASpaceSmithGameMode::ASpaceSmithGameMode()
 {
 	// set default pawn class to our Blueprinted character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("Blueprint'/Game/SpaceSmith/Characters/SpaceSmithCharacter'"));
-	DefaultPawnClass = PlayerPawnClassFinder.Class;
+	DefaultPawnClass = ASpaceSmithCharacter::StaticClass();
 	PlayerControllerClass = ASpaceSmithCharacterController::StaticClass();
 
 	// use our custom HUD class

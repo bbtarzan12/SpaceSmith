@@ -36,7 +36,7 @@ class SPACESMITH_API FTerrainWorker : public FRunnable
 {
 public:
 	FTerrainWorker();
-	virtual ~FTerrainWorker();
+	virtual ~FTerrainWorker() override;
 
 	void EnsureCompletion();
 	void Shutdown();

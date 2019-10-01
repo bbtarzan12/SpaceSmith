@@ -66,20 +66,19 @@ uint32 FTerrainWorker::Run()
 	{
 		if (QueuedWorks.IsEmpty())
 		{
-			//FPlatformProcess::Sleep(0.03f);
-
 			continue;
 		}
 
 		FTerrainWorkerInformation WorkerInformation;
-		QueuedWorks.Dequeue(WorkerInformation);
-
-		int32 NumTriangles = GenerateSurface(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
-		if (NumTriangles == -1)
-			WorkerInformation.bValid = false;
-		else
-			WorkerInformation.bValid = true;
-		FinishedWorks.Enqueue(WorkerInformation);
+		if (QueuedWorks.Dequeue(WorkerInformation))
+		{
+			int32 NumTriangles = GenerateSurface(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
+			if (NumTriangles == -1)
+				WorkerInformation.bValid = false;
+			else
+				WorkerInformation.bValid = true;
+			FinishedWorks.Enqueue(WorkerInformation);
+		}
 	}
 	bRunning = false;
 	return 0;

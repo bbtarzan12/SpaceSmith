@@ -7,6 +7,9 @@
 #include "MarchingCubes/TerrainChunk.h"
 #include "MarchingCubes/TerrainData.h"
 #include "../Plugins/SimplexNoise/Source/SimplexNoise/Public/SimplexNoiseBPLibrary.h"
+#include "SpaceSmithCharacter.h"
+#include "Miscellaneous/UtilityTimer.h"
+#include "MarchingCubes/FTerrainChunkWorker.h"
 
 // Sets default values
 ATerrainGenerator::ATerrainGenerator()
@@ -20,62 +23,136 @@ void ATerrainGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Worker = new FTerrainWorker();
-	Worker->Start();
+	TerrainWorker = new FTerrainWorker();
+	TerrainWorker->Start();
+
+	ChunkWorker = new FTerrainChunkWorker();
+	ChunkWorker->Start();
 
 	Grid = new UTerrainData();
 
-	for (int32 X = 0; X < 5; X++)
-	{
-		for (int32 Y = 0; Y < 5; Y++)
-		{
-			for (int32 Z = -1; Z <= 1; Z++)
-			{
-				for (int32 GridX = 0; GridX < ChunkSize.X; GridX++)
-				{
-					for (int32 GridY = 0; GridY < ChunkSize.Y; GridY++)
-					{
-						for (int32 GridZ = 0; GridZ < ChunkSize.Z; GridZ++)
-						{
-							int32 SampleX = GridX + ChunkSize.X * X;
-							int32 SampleY = GridY + ChunkSize.Y * Y;
-							int32 SampleZ = GridZ + ChunkSize.Z * Z;
-
-							float Density = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -5.0f, 5.0f, 0.003f);
-							Density += USimplexNoiseBPLibrary::SimplexNoiseInRange3D(SampleX, SampleY, SampleZ, -3.0f, 3.0f, 0.07f);
-							Density *= USimplexNoiseBPLibrary::SimplexNoiseInRange3D(SampleX, SampleY, SampleZ, -0.5f, 0.5f, 0.03f);
-
-							if(Density > SampleZ)
-								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), 1, true);
-							else
-								SetVoxel(FIntVector(SampleX, SampleY, SampleZ), -1, true);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	UpdateTerrain();
+	Character = Cast<ASpaceSmithCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
 }
 
 // Called every frame
 void ATerrainGenerator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	CheckPlayerPosition();
+	GenerateChunk();
+	GenerateChunkMesh();
+}
 
-	if (!Worker)
+void ATerrainGenerator::CheckPlayerPosition()
+{
+	if (!Character)
 	{
 		return;
 	}
 
-	if (Worker->FinishedWorks.IsEmpty())
+	FIntVector CharacterChunkLocation = WorldToChunk(Character->GetActorLocation());
+
+	if (LastCharacterChunkLocation == CharacterChunkLocation)
+	{
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Spawn Chunks")));
+	TArray<FIntVector> ChunkLocations;
+
+	for (int32 X = CharacterChunkLocation.X - NumSpawnChunk.X; X <= CharacterChunkLocation.X + NumSpawnChunk.X; X++)
+	{
+		for (int32 Y = CharacterChunkLocation.Y - NumSpawnChunk.Y; Y <= CharacterChunkLocation.Y + NumSpawnChunk.Y; Y++)
+		{
+			for (int32 Z = CharacterChunkLocation.Z - NumSpawnChunk.Z; Z <= CharacterChunkLocation.Z + NumSpawnChunk.Z; Z++)
+			{
+				FIntVector ChunkLocation = FIntVector(X, Y, Z);
+				ChunkLocations.Add(ChunkLocation);
+			}
+		}
+	}
+	ChunkLocations.Sort([&](const FIntVector& A, const FIntVector& B)
+	{
+		float DistanceA = (CharacterChunkLocation - A).Size();
+		float DistanceB = (CharacterChunkLocation - B).Size();
+		return DistanceA < DistanceB;
+	});
+
+	LastCharacterChunkLocation = CharacterChunkLocation;
+
+	for (auto & ChunkLocation : ChunkLocations)
+	{
+		CreateChunk(ChunkLocation);
+	}
+
+	UpdateTerrain();
+}
+
+void ATerrainGenerator::GenerateChunk()
+{
+	if (!ChunkWorker)
+	{
+		return;
+	}
+
+	if (ChunkWorker->FinishedWorks.Num() == 0)
+	{
+		return;
+	}
+
+	FTerrainChunkWorkerInformation FinishedWork;
+	if (ChunkWorker->Dequeue(FinishedWork))
+	{
+		FString ComponentName;
+		int32 ID = Chunks.Num();
+		ComponentName.Append(TEXT("Chunk"));
+		ComponentName.AppendInt(ID);
+		FName ChunkComponentName;
+		ChunkComponentName.AppendString(ComponentName);
+		UTerrainChunk* NewChunk = NewObject<UTerrainChunk>(this, ChunkComponentName);
+		NewChunk->RegisterComponent();
+
+		if (TerrainMaterial)
+		{
+			NewChunk->SetMaterial(0, TerrainMaterial);
+		}
+		else
+		{
+			NewChunk->SetMaterial(0, UMaterial::GetDefaultMaterial(MD_Surface));
+		}
+
+		NewChunk->Generator = this;
+		NewChunk->ChunkLocation = FinishedWork.ChunkLocation;
+		NewChunk->bHasChanges = true;
+		Chunks.Add(FinishedWork.ChunkLocation, NewChunk);
+
+		for (auto & ChunkLocation : FinishedWork.EdgeChunks) 
+		{
+			if (UTerrainChunk* Chunk = GetChunk(ChunkLocation))
+			{
+				Chunk->bHasChanges = true;
+			}
+		}
+
+		UpdateTerrain();
+	}
+}
+
+void ATerrainGenerator::GenerateChunkMesh()
+{
+	if (!TerrainWorker)
+	{
+		return;
+	}
+
+	if (TerrainWorker->FinishedWorks.IsEmpty())
 	{
 		return;
 	}
 
 	FTerrainWorkerInformation FinishedWork;
-	if (Worker->FinishedWorks.Dequeue(FinishedWork))
+	if (TerrainWorker->FinishedWorks.Dequeue(FinishedWork))
 	{
 		UTerrainChunk** FoundChunk = Chunks.Find(FinishedWork.ChunkLocation);
 		if (!FoundChunk)
@@ -109,13 +186,22 @@ void ATerrainGenerator::Tick(float DeltaTime)
 
 void ATerrainGenerator::BeginDestroy()
 {
-	if (Worker)
+	if (TerrainWorker)
 	{
-		Worker->EnsureCompletion();
-		Worker->Shutdown();
-		delete Worker;
-		Worker = nullptr;
+		TerrainWorker->EnsureCompletion();
+		TerrainWorker->Shutdown();
+		delete TerrainWorker;
+		TerrainWorker = nullptr;
 	}
+
+	if (ChunkWorker)
+	{
+		ChunkWorker->EnsureCompletion();
+		ChunkWorker->Shutdown();
+		delete ChunkWorker;
+		ChunkWorker = nullptr;
+	}
+
 	Super::BeginDestroy();
 }
 
@@ -127,28 +213,13 @@ bool ATerrainGenerator::CreateChunk(FIntVector ChunkLocation)
 		return false;
 	}
 
-	FString ComponentName;
-	int32 ID = Chunks.Num();
-	ComponentName.Append(TEXT("Chunk"));
-	ComponentName.AppendInt(ID);
-	FName ChunkComponentName;
-	ChunkComponentName.AppendString(ComponentName);
-	UTerrainChunk* NewChunk = NewObject<UTerrainChunk>(this, ChunkComponentName);
-	NewChunk->RegisterComponent();
+	FTerrainChunkWorkerInformation Information;
+	Information.ChunkLocation = ChunkLocation;
+	Information.ChunkSize = ChunkSize;
+	Information.Grid = Grid;
+	Information.Generator = this;
 
-	if (TerrainMaterial)
-	{
-		NewChunk->SetMaterial(0, TerrainMaterial);
-	}
-	else
-	{
-		NewChunk->SetMaterial(0, UMaterial::GetDefaultMaterial(MD_Surface));
-	}
-
-	NewChunk->Generator = this;
-	NewChunk->ChunkLocation = ChunkLocation;
-	NewChunk->bHasChanges = true;
-	Chunks.Add(ChunkLocation, NewChunk);
+	ChunkWorker->Enqueue(Information);
 	return true;
 }
 
@@ -190,7 +261,7 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 	Information.ChunkSize = ChunkSize;
 	Information.IsoValue = IsoValue;
 
-	Worker->QueuedWorks.Enqueue(Information);
+	TerrainWorker->QueuedWorks.Enqueue(Information);
 	return true;
 }
 
@@ -429,9 +500,28 @@ void ATerrainGenerator::UpdateTerrain()
 
 FIntVector ATerrainGenerator::WorldToGrid(FVector WorldLocation)
 {
+	int32 X = FMath::FloorToInt(WorldLocation.X / ChunkScale.X);
+	int32 Y = FMath::FloorToInt(WorldLocation.Y / ChunkScale.Y);
+	int32 Z = FMath::FloorToInt(WorldLocation.Z / ChunkScale.Z);
+
+	return FIntVector(X, Y, Z);
+}
+
+FIntVector ATerrainGenerator::WorldToChunk(FVector WorldLocation)
+{
 	int32 GridX = FMath::FloorToInt(WorldLocation.X / ChunkScale.X);
 	int32 GridY = FMath::FloorToInt(WorldLocation.Y / ChunkScale.Y);
 	int32 GridZ = FMath::FloorToInt(WorldLocation.Z / ChunkScale.Z);
 
-	return FIntVector(GridX, GridY, GridZ);
+	int32 ChunkX = FMath::FloorToInt((float)GridX / ChunkSize.X);
+	int32 ChunkY = FMath::FloorToInt((float)GridY / ChunkSize.Y);
+	int32 ChunkZ = FMath::FloorToInt((float)GridZ / ChunkSize.Z);
+
+	return FIntVector(ChunkX, ChunkY, ChunkZ);
+}
+
+FORCEINLINE FIntVector ATerrainGenerator::GetPlayerChunkPosition() const
+{
+	FIntVector ChunkPosition = LastCharacterChunkLocation;
+	return ChunkPosition;
 }

@@ -8,20 +8,20 @@ UTerrainData::UTerrainData()
 
 }
 
-float UTerrainData::GetVoxel(FIntVector GridLocation)
+float UTerrainData::GetVoxelDensity(FIntVector GridLocation)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
 	{
-		FVoxel* Voxel = GridData[GridLocation];
+		float Density = GridData[GridLocation]->Density;
 		CriticalSection.Unlock();
-		return Voxel->Density;
+		return Density;
 	}
 	CriticalSection.Unlock();
 	return 0;
 }
 
-void UTerrainData::SetVoxel(FIntVector GridLocation, float Value)
+void UTerrainData::SetVoxelDensity(FIntVector GridLocation, float Value)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
@@ -35,7 +35,7 @@ void UTerrainData::SetVoxel(FIntVector GridLocation, float Value)
 	CriticalSection.Unlock();
 }
 
-float UTerrainData::AddVoxel(FIntVector GridLocation, float Value)
+float UTerrainData::AddVoxelDensity(FIntVector GridLocation, float Value)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
@@ -51,4 +51,31 @@ float UTerrainData::AddVoxel(FIntVector GridLocation, float Value)
 		CriticalSection.Unlock();
 		return Value;
 	}
+}
+
+float UTerrainData::GetVoxelHeight(FIntVector GridLocation)
+{
+	CriticalSection.Lock();
+	if (GridData.Contains(GridLocation))
+	{
+		float TestValue = GridData[GridLocation]->Height;
+		CriticalSection.Unlock();
+		return TestValue;
+	}
+	CriticalSection.Unlock();
+	return 0;
+}
+
+void UTerrainData::SetVoxelHeight(FIntVector GridLocation, float Value)
+{
+	CriticalSection.Lock();
+	if (GridData.Contains(GridLocation))
+	{
+		GridData[GridLocation]->Height = Value;
+	}
+	else
+	{
+		GridData.Add(GridLocation, new FVoxel(0, Value));
+	}
+	CriticalSection.Unlock();
 }

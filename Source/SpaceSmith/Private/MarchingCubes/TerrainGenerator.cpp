@@ -189,7 +189,6 @@ void ATerrainGenerator::GenerateChunkMesh()
 
 		TerrainChunk->ClearAllMeshSections();
 		TerrainChunk->CreateMeshSection_LinearColor(0, FinishedWork.Vertices, FinishedWork.Indices, FinishedWork.Normals, FinishedWork.UVs, FinishedWork.VertexColors, FinishedWork.Tangents, true);
-
 		if (TerrainChunk->HasChanges())
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Regenerate Mesh, Outdated"), FinishedWork.Vertices.Num()));
@@ -299,7 +298,7 @@ bool ATerrainGenerator::DestroyChunk(FIntVector ChunkLocation)
 
 bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLateUpdate)
 {
-	Grid->SetVoxel(GridLocation, Value);
+	Grid->SetVoxelDensity(GridLocation, Value);
 
 	int32 ChunkX = FMath::FloorToInt((float)GridLocation.X / ChunkSize.X);
 	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
@@ -396,7 +395,7 @@ void ATerrainGenerator::SetVoxels(const TArray<FIntVector>& GridLocations, float
 
 bool ATerrainGenerator::AddVoxel(FIntVector GridLocation, float Value, bool bLateUpdate /*= false*/)
 {
-	Grid->AddVoxel(GridLocation, Value);
+	Grid->AddVoxelDensity(GridLocation, Value);
 
 	int32 ChunkX = FMath::FloorToInt((float)GridLocation.X / ChunkSize.X);
 	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
@@ -494,7 +493,7 @@ void ATerrainGenerator::AddVoxels(const TArray<FIntVector>& GridLocations, float
 float ATerrainGenerator::GetVoxel(FIntVector GridLocation)
 {
 	if (Grid)
-		return Grid->GetVoxel(GridLocation);
+		return Grid->GetVoxelDensity(GridLocation);
 
 	return 0;
 }

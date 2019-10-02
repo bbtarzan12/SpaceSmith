@@ -98,16 +98,31 @@ void FTerrainChunkWorker::GenerateChunk(UTerrainData* Grid, const FIntVector& Ch
 				int32 SampleZ = Z + ChunkSize.Z * ChunkLocation.Z;
 
 				float Density = -SampleZ;
-				float Land = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -5.0f, 5.0f, 0.005f);
-				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -2.5f, 2.5f, 0.01f);
-				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.25f, 1.25f, 0.02f);
-				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.03f, 0.03f, 0.5f);
+
+				float Land = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.0f, 1.0f, 0.005f);
+				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.5f, 0.5f, 0.01f);
+				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.25f, 0.25f, 0.02f);
+				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.125f, 0.125f, 0.2f);
+				
+				float Mountain2D = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, 0.0f, 30.0f, 0.01f);
+				Mountain2D += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.25f, 15.0f, 0.02f);
+				Mountain2D += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.625f, 7.0f, 0.04f);
+
+				float MountainMask1 = USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.001f);
+				MountainMask1 *= USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.002f);
+
+				float MountainMask2 = USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.003f);
+				MountainMask2 *= USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.006f);
+
 				Density += Land;
-				Density = FMath::Clamp(Density, -1.0f, 1.0f);
+				Density += Mountain2D * MountainMask1 * MountainMask2;
+				Density = FMath::Clamp(Density, 0.0f, 1.0f);
 
 				FIntVector GridLocation = FIntVector(SampleX, SampleY, SampleZ);
+				float Height = FMath::Clamp((SampleZ + 5) / 30.0f, 0.0f, 1.0f);
 
-				Grid->SetVoxel(FIntVector(SampleX, SampleY, SampleZ), Density);
+				Grid->SetVoxelDensity(GridLocation, Density);
+				Grid->SetVoxelHeight(GridLocation, Height);
 
 				if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
 				{

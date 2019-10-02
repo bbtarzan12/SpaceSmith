@@ -117,14 +117,15 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 				}
 
 				// 큐브 꼭짓점의 값
-				float P0 = Grid->GetVoxel(FIntVector(X, Y, Z));
-				float P1 = Grid->GetVoxel(FIntVector(X + 1, Y, Z));
-				float P2 = Grid->GetVoxel(FIntVector(X, Y + 1, Z));
-				float P3 = Grid->GetVoxel(FIntVector(X + 1, Y + 1, Z));
-				float P4 = Grid->GetVoxel(FIntVector(X, Y, Z + 1));
-				float P5 = Grid->GetVoxel(FIntVector(X + 1, Y, Z + 1));
-				float P6 = Grid->GetVoxel(FIntVector(X, Y + 1, Z + 1));
-				float P7 = Grid->GetVoxel(FIntVector(X + 1, Y + 1, Z + 1));
+				float P0 = Grid->GetVoxelDensity(FIntVector(X, Y, Z));
+				float P1 = Grid->GetVoxelDensity(FIntVector(X + 1, Y, Z));
+				float P2 = Grid->GetVoxelDensity(FIntVector(X, Y + 1, Z));
+				float P3 = Grid->GetVoxelDensity(FIntVector(X + 1, Y + 1, Z));
+				float P4 = Grid->GetVoxelDensity(FIntVector(X, Y, Z + 1));
+				float P5 = Grid->GetVoxelDensity(FIntVector(X + 1, Y, Z + 1));
+				float P6 = Grid->GetVoxelDensity(FIntVector(X, Y + 1, Z + 1));
+				float P7 = Grid->GetVoxelDensity(FIntVector(X + 1, Y + 1, Z + 1));
+				float Height = Grid->GetVoxelHeight(FIntVector(X, Y, Z));
 
 				// 각 꼭짓점의 값이 IsoLevel과 비교해서 Surface 안쪽인지 확인
 				int32 IntersectBitMap = 0;
@@ -147,61 +148,86 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 				if (EdgeBits == 0)
 					continue;
 
+				float InterpolatedIntersectPoint = 0;
+				float InterpolatedValues[12];
 				FVector InterpolatedPoints[12];
 
 				//아래 Edge
 				if ((EdgeBits & 1) > 0)
 				{
-					InterpolatedPoints[0] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), P0, P1);
+					InterpolatedIntersectPoint = (IsoValue - P0) / (P1 - P0);
+					InterpolatedPoints[0] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), InterpolatedIntersectPoint);
+					InterpolatedValues[1] = FMath::Lerp(P0, P1, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 2) > 0)
 				{
-					InterpolatedPoints[1] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P1, P3);
+					InterpolatedIntersectPoint = (IsoValue - P1) / (P3 - P1);
+					InterpolatedPoints[1] = FMath::Lerp(FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), InterpolatedIntersectPoint);
+					InterpolatedValues[1] = FMath::Lerp(P1, P3, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 4) > 0)
 				{
-					InterpolatedPoints[2] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P2, P3);
-
+					InterpolatedIntersectPoint = (IsoValue - P2) / (P3 - P2);
+					InterpolatedPoints[2] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), InterpolatedIntersectPoint);
+					InterpolatedValues[2] = FMath::Lerp(P2, P3, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 8) > 0)
 				{
-					InterpolatedPoints[3] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), P0, P2);
+					InterpolatedIntersectPoint = (IsoValue - P0) / (P2 - P0);
+					InterpolatedPoints[3] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), InterpolatedIntersectPoint);
+					InterpolatedValues[3] = FMath::Lerp(P0, P2, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 
 				//위 Edge
 				if ((EdgeBits & 16) > 0)
 				{
-					InterpolatedPoints[4] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P4, P5);
+					InterpolatedIntersectPoint = (IsoValue - P4) / (P5 - P4);
+					InterpolatedPoints[4] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[4] = FMath::Lerp(P4, P5, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 32) > 0)
 				{
-					InterpolatedPoints[5] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P5, P7);
+					InterpolatedIntersectPoint = (IsoValue - P5) / (P7 - P5);
+					InterpolatedPoints[5] = FMath::Lerp(FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[5] = FMath::Lerp(P5, P7, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 64) > 0)
 				{
-					InterpolatedPoints[6] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P6, P7);
+					InterpolatedIntersectPoint = (IsoValue - P6) / (P7 - P6);
+					InterpolatedPoints[6] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[6] = FMath::Lerp(P6, P7, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 128) > 0)
 				{
-					InterpolatedPoints[7] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P4, P6);
+					InterpolatedIntersectPoint = (IsoValue - P4) / (P6 - P4);
+					InterpolatedPoints[7] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[7] = FMath::Lerp(P4, P6, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 
 				//옆면 Edge
 				if ((EdgeBits & 256) > 0)
 				{
-					InterpolatedPoints[8] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P0, P4);
+					InterpolatedIntersectPoint = (IsoValue - P0) / (P4 - P0);
+					InterpolatedPoints[8] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[8] = FMath::Lerp(P0, P4, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 512) > 0)
 				{
-					InterpolatedPoints[9] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), P1, P5);
+					InterpolatedIntersectPoint = (IsoValue - P1) / (P5 - P1);
+					InterpolatedPoints[9] = FMath::Lerp(FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[9] = FMath::Lerp(P1, P5, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 1024) > 0)
 				{
-					InterpolatedPoints[10] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P3, P7);
+					InterpolatedIntersectPoint = (IsoValue - P3) / (P7 - P3);
+					InterpolatedPoints[10] = FMath::Lerp(FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X + 1, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[10] = FMath::Lerp(P3, P7, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 				if ((EdgeBits & 2048) > 0)
 				{
-					InterpolatedPoints[11] = VectorInterp(IsoValue, FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), P2, P6);
+					InterpolatedIntersectPoint = (IsoValue - P2) / (P6 - P2);
+					InterpolatedPoints[11] = FMath::Lerp(FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z), FVector(ChunkLocation.X + X, ChunkLocation.Y + Y + 1, ChunkLocation.Z + Z + 1), InterpolatedIntersectPoint);
+					InterpolatedValues[11] = FMath::Lerp(P2, P6, FMath::Clamp(0.0f, 1.0f, InterpolatedIntersectPoint));
 				}
 
 				// IntersectBitMap을 삼각형 룩업 테이블의 인덱스로 사용하도록 설정
@@ -238,6 +264,7 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 						VIndex0 = Positions.Add(Vertex0.Position);
 						Indices.Add(VIndex0);
 						Vertices.Add(Vertex0.Position);
+						VertexColors.Add(FLinearColor(Height, Height, Height, 1));
 						UVs.Add(FVector2D(Vertex0.TextureCoordinate[0]));
 					}
 					else
@@ -251,6 +278,7 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 						VIndex1 = Positions.Add(Vertex1.Position);
 						Indices.Add(VIndex1);
 						Vertices.Add(Vertex1.Position);
+						VertexColors.Add(FLinearColor(Height, Height, Height, 1));
 						UVs.Add(FVector2D(Vertex1.TextureCoordinate[0]));
 					}
 					else
@@ -264,6 +292,7 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 						VIndex2 = Positions.Add(Vertex2.Position);
 						Indices.Add(VIndex2);
 						Vertices.Add(Vertex2.Position);
+						VertexColors.Add(FLinearColor(Height, Height, Height, 1));
 						UVs.Add(FVector2D(Vertex2.TextureCoordinate[0]));
 					}
 					else
@@ -306,7 +335,7 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 		{
 			Normals[Indices[Index + I]] = TriNormal;
 			Tangents[Indices[Index + I]] = tangent;
-			VertexColors[Indices[Index + I]] = FColor(1, 1, 1, 1);
+			//VertexColors[Indices[Index + I]] = FColor(1, 1, 1, 1);
 		}
 	}
 	return NumTriangles;

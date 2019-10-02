@@ -490,14 +490,38 @@ float USimplexNoiseBPLibrary::SimplexNoiseScaled2D(float x, float y, float scale
 
 float USimplexNoiseBPLibrary::SimplexNoiseScaled3D(float x, float y, float z, float scaleOut, float inFactor)
 {
-	return _simplexNoise3D((x * inFactor), (y * inFactor), (z * inFactor));
+	return _simplexNoise3D((x * inFactor), (y * inFactor), (z * inFactor)) * scaleOut;
 }
 
 
 float USimplexNoiseBPLibrary::SimplexNoiseScaled4D(float x, float y, float z, float w, float scaleOut, float inFactor)
 {
-	return _simplexNoise4D(x * inFactor, y * inFactor, z * inFactor, w * inFactor);
-};
+	return _simplexNoise4D(x * inFactor, y * inFactor, z * inFactor, w * inFactor) * scaleOut;
+}
+
+
+float USimplexNoiseBPLibrary::SimplexNoise011D(float x, float inFactor /*= 1.f*/)
+{
+	return (_simplexNoise1D(x * inFactor) + 1) / 2.0f;
+}
+
+
+float USimplexNoiseBPLibrary::SimplexNoise012D(float x, float y, float inFactor /*= 1.f*/)
+{
+	return (_simplexNoise2D(x * inFactor, y * inFactor) + 1) / 2.0f;
+}
+
+
+float USimplexNoiseBPLibrary::SimplexNoise013D(float x, float y, float z, float inFactor /*= 1.f*/)
+{
+	return (_simplexNoise3D(x * inFactor, y * inFactor, z * inFactor) + 1) / 2.0f;
+}
+
+
+float USimplexNoiseBPLibrary::SimplexNoise014D(float x, float y, float z, float w, float inFactor /*= 1.f*/)
+{
+	return (_simplexNoise4D(x * inFactor, y * inFactor, z * inFactor, w * inFactor) + 1) / 2.0f;
+}
 
 // Return value in Range between two float numbers
 // Return Value is scaled by difference between rangeMin & rangeMax value
@@ -506,26 +530,26 @@ float USimplexNoiseBPLibrary::SimplexNoiseScaled4D(float x, float y, float z, fl
 float USimplexNoiseBPLibrary::SimplexNoiseInRange1D(float x, float rangeMin, float rangeMax, float inFactor)
 {
 	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	return SimplexNoiseScaled1D(x, (rangeMax - rangeMin), inFactor) + rangeMin;
+	return (rangeMax - rangeMin) * SimplexNoise011D(x, inFactor) + rangeMin;
 }
 
 
 float USimplexNoiseBPLibrary::SimplexNoiseInRange2D(float x, float y, float rangeMin, float rangeMax, float inFactor)
 {
 	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	return SimplexNoiseScaled2D(x,y, (rangeMax - rangeMin), inFactor) + rangeMin;
+	return (rangeMax - rangeMin) * SimplexNoise012D(x, y, inFactor) + rangeMin;
 }
 
 
 float USimplexNoiseBPLibrary::SimplexNoiseInRange3D(float x, float y, float z, float rangeMin, float rangeMax, float inFactor)
 {
 	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	return SimplexNoiseScaled3D(x,y,z, (rangeMax - rangeMin), inFactor) + rangeMin;
+	return (rangeMax - rangeMin) * SimplexNoise013D(x, y, z, inFactor) + rangeMin;
 }
 
 
 float USimplexNoiseBPLibrary::SimplexNoiseInRange4D(float x, float y, float z, float w, float rangeMin, float rangeMax, float inFactor)
 {
 	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	return SimplexNoiseScaled4D(x,y,z,w, (rangeMax - rangeMin), inFactor) + rangeMin;
+	return (rangeMax - rangeMin) * SimplexNoise014D(x, y, z, w, inFactor) + rangeMin;
 }

@@ -149,7 +149,6 @@ void ATerrainGenerator::GenerateChunk()
 			}
 		}
 		CalculatingChunks.Remove(FinishedWork.ChunkLocation);
-		UpdateTerrain();
 	}
 }
 
@@ -259,11 +258,31 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 	UTerrainChunk *TerrainChunk = *FoundChunk;
 	if (TerrainChunk->bUpdating)
 	{
-		// 청크가 이미 업데이트 중이면 하지 않고, 다음에 업데이트 한다
+		// 청크가 이미 업데이트 중이면 하지 않고, 다음에 업데이트하도록 표시한다
 		TerrainChunk->SetChanges(true);
 		return false;
 	}
 
+
+	// 이웃 청크가 업데이트중이라면 하지 않는다.
+	for (int32 X = -1; X <= 1; X++)
+	{
+		for (int32 Y = -1; Y <= 1; Y++)
+		{
+			for (int32 Z = -1; Z <= 1; Z++)
+			{
+				if(X == 0 && Y == 0 && Z == 0)
+					continue;
+
+				FIntVector NeighborChunk = ChunkLocation + FIntVector(X, Y, Z);
+
+				if (CalculatingChunks.Contains(NeighborChunk))
+				{
+					return false;
+				}
+			}
+		}
+	}
 	TerrainChunk->bUpdating = true;
 	TerrainChunk->SetChanges(false);
 

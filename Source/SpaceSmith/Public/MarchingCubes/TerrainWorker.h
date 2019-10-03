@@ -91,8 +91,10 @@ private:
 
 	bool bRunning;
 	FCriticalSection Mutex;
-
+	
+	static const FIntVector CornerTable[8];
+	static const int32 CornerOfEdgeTable[12][2];
 	static const int32 EdgeTable[256];
-	static const int32 TriTable[];
+	static const int32 TriTable[256][16];
 	
 };

@@ -99,7 +99,7 @@ private:
 	FIntVector LastCharacterChunkLocation = FIntVector(-999999, -999999, -999999);
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<FIntVector> CalculatingChunks; // 아직 만들어지지 않고, 계산중인 청크 위치
+	TSet<FIntVector> CalculatingChunks; // 아직 만들어지지 않고, 계산중인 청크 위치
 
 	UPROPERTY(EditAnywhere)
 	bool bDebug;

@@ -100,7 +100,6 @@ void FTerrainWorker::Stop()
 int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrainChunk* Chunk, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FLinearColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
 {
 	SCOPE_CYCLE_COUNTER( STAT_PerformMarchingCubes );
-	TArray<FVector> Positions;
 	FIntVector ChunkStartSize = FIntVector(ChunkLocation.X * ChunkSize.X, ChunkLocation.Y * ChunkSize.Y, ChunkLocation.Z * ChunkSize.Z);
 	FIntVector ChunkEndSize = FIntVector((ChunkLocation.X + 1)* ChunkSize.X, (ChunkLocation.Y + 1) * ChunkSize.Y, (ChunkLocation.Z + 1) * ChunkSize.Z);
 
@@ -122,9 +121,9 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 				float P[8];
 				for (int32 Index = 0; Index < 8; Index++)
 				{
-					P[Index] = Grid->GetVoxelDensity(GridLocation + CornerTable[Index]);
+					P[Index] = Grid->GetDensity(GridLocation + CornerTable[Index]);
 				}
-				float Height = Grid->GetVoxelHeight(FIntVector(X, Y, Z));
+				float Height = Grid->GetHeight(FIntVector(X, Y, Z));
 
 				// 각 꼭짓점의 값이 IsoLevel과 비교해서 Surface 안쪽인지 확인
 				int32 IntersectBitMap = 0;

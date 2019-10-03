@@ -28,12 +28,12 @@ class SPACESMITH_API UTerrainData
 public:
 	UTerrainData();
 
-	float GetVoxelDensity(FIntVector GridLocation);
-	void SetVoxelDensity(FIntVector GridLocation, float Value);
-	float AddVoxelDensity(FIntVector GridLocation, float Value);
+	float GetDensity(FIntVector GridLocation);
+	void SetDensity(FIntVector GridLocation, float Value);
+	float AddDensity(FIntVector GridLocation, float Value);
 
-	float GetVoxelHeight(FIntVector GridLocation);
-	void SetVoxelHeight(FIntVector GridLocation, float Value);
+	float GetHeight(FIntVector GridLocation);
+	void SetHeight(FIntVector GridLocation, float Value);
 
 public:
 	TMap<FIntVector, FVoxel*> GridData;

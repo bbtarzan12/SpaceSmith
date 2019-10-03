@@ -6,7 +6,7 @@
 
 UTerrainChunk::UTerrainChunk()
 {
-	bUpdating = false;
+	bUpdatingMesh = false;
 	bHasChanges = false;
 }
 

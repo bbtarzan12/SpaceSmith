@@ -121,8 +121,8 @@ void FTerrainChunkWorker::GenerateChunk(UTerrainData* Grid, const FIntVector& Ch
 				FIntVector GridLocation = FIntVector(SampleX, SampleY, SampleZ);
 				float Height = FMath::Clamp((SampleZ + 5) / 30.0f, 0.0f, 1.0f);
 
-				Grid->SetVoxelDensity(GridLocation, Density);
-				Grid->SetVoxelHeight(GridLocation, Height);
+				Grid->SetDensity(GridLocation, Density);
+				Grid->SetHeight(GridLocation, Height);
 
 				if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
 				{

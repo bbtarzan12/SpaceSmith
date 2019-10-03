@@ -8,7 +8,7 @@ UTerrainData::UTerrainData()
 
 }
 
-float UTerrainData::GetVoxelDensity(FIntVector GridLocation)
+float UTerrainData::GetDensity(FIntVector GridLocation)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
@@ -21,7 +21,7 @@ float UTerrainData::GetVoxelDensity(FIntVector GridLocation)
 	return 0;
 }
 
-void UTerrainData::SetVoxelDensity(FIntVector GridLocation, float Value)
+void UTerrainData::SetDensity(FIntVector GridLocation, float Value)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
@@ -35,7 +35,7 @@ void UTerrainData::SetVoxelDensity(FIntVector GridLocation, float Value)
 	CriticalSection.Unlock();
 }
 
-float UTerrainData::AddVoxelDensity(FIntVector GridLocation, float Value)
+float UTerrainData::AddDensity(FIntVector GridLocation, float Value)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
@@ -53,7 +53,7 @@ float UTerrainData::AddVoxelDensity(FIntVector GridLocation, float Value)
 	}
 }
 
-float UTerrainData::GetVoxelHeight(FIntVector GridLocation)
+float UTerrainData::GetHeight(FIntVector GridLocation)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))
@@ -66,7 +66,7 @@ float UTerrainData::GetVoxelHeight(FIntVector GridLocation)
 	return 0;
 }
 
-void UTerrainData::SetVoxelHeight(FIntVector GridLocation, float Value)
+void UTerrainData::SetHeight(FIntVector GridLocation, float Value)
 {
 	CriticalSection.Lock();
 	if (GridData.Contains(GridLocation))

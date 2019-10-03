@@ -43,6 +43,9 @@ public:
 	void AddVoxels(const TArray<FIntVector>& GridLocations, float Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
+	void AddVoxelArray(const TArray<FIntVector>& GridLocations, const TArray<float>& Values);
+
+	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	float GetVoxel(FIntVector GridLocation);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
@@ -97,9 +100,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	FIntVector LastCharacterChunkLocation = FIntVector(-999999, -999999, -999999);
-
-	UPROPERTY(VisibleAnywhere)
-	TSet<FIntVector> CalculatingChunks; // 아직 만들어지지 않고, 계산중인 청크 위치
 
 	UPROPERTY(EditAnywhere)
 	bool bDebug;

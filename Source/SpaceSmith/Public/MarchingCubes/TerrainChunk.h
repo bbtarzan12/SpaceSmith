@@ -25,7 +25,10 @@ public:
 	FIntVector ChunkLocation;
 
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
-	bool bUpdating;
+	bool bUpdatingMesh;
+
+	UPROPERTY(VisibleAnywhere, Category = "Terrain")
+	bool bUpdatingVoxel;
 
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
 	class ATerrainGenerator* Generator;

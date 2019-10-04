@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "TerrainWorker.h"
 #include "TerrainGenerator.generated.h"
+
+DECLARE_STATS_GROUP(TEXT("Terrain Generator"), STATGROUP_TerrainGenerator, STATCAT_Advanced);
 
 class UTerrainChunk;
 
@@ -37,7 +40,7 @@ public:
 	void SetVoxels(const TArray<FIntVector>& GridLocations, float Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
-	bool AddVoxel(FIntVector GridLocation, float Value, bool bLateUpdate = false);
+	bool AddVoxel(FIntVector GridLocation, float Value, bool bArgent = false);
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	void AddVoxels(const TArray<FIntVector>& GridLocations, float Value);
@@ -59,14 +62,18 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	FVector ChunkToWorld(FIntVector ChunkLocation);
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Terrain")
 	FORCEINLINE FIntVector GetPlayerChunkPosition() const;
+
+	static int32 To1DIndex(FIntVector Location, FIntVector ChunkSize);
+	static FIntVector To3DIndex(int32 Index, FIntVector ChunkSize);
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	void MoveFinishedWorksWorkerToGenerator();
 	void CheckPlayerPosition();
 	void GenerateChunk();
 	void GenerateChunkMesh();
@@ -90,7 +97,6 @@ public:
 private:
 	class FTerrainWorker* TerrainWorker;
 	class FTerrainChunkWorker* ChunkWorker;
-	class UTerrainData* Grid;
 
 	UPROPERTY(VisibleAnywhere)
 	class ASpaceSmithCharacter* Character;
@@ -100,6 +106,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	FIntVector LastCharacterChunkLocation = FIntVector(-999999, -999999, -999999);
+
+	TQueue<FTerrainWorkerInformation> QueuedFinishedWorks;
 
 	UPROPERTY(EditAnywhere)
 	bool bDebug;

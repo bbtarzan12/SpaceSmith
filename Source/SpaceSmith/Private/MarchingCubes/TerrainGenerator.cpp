@@ -12,6 +12,8 @@
 #include "MarchingCubes/TerrainChunkWorker.h"
 #include "DrawDebugHelpers.h"
 
+DECLARE_CYCLE_STAT(TEXT("Terrain Generator ~ CopyVoxelData To TerrainWorker"), STAT_CopyVoxelDataToTerrainWorker, STATGROUP_TerrainWorker);
+
 // Sets default values
 ATerrainGenerator::ATerrainGenerator()
 {
@@ -30,8 +32,6 @@ void ATerrainGenerator::BeginPlay()
 	ChunkWorker = new FTerrainChunkWorker();
 	ChunkWorker->Start();
 
-	Grid = new UTerrainData();
-
 	Character = Cast<ASpaceSmithCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
 }
 
@@ -40,6 +40,7 @@ void ATerrainGenerator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
+	MoveFinishedWorksWorkerToGenerator();
 	CheckPlayerPosition();
 	GenerateChunk();
 	GenerateChunkMesh();
@@ -49,12 +50,26 @@ void ATerrainGenerator::Tick(float DeltaTime)
 	{
 		for (const TPair<FIntVector, UTerrainChunk*>& Chunk : Chunks)
 		{
-			if (Chunk.Value->HasChanges())
+			if (Chunk.Value->GetDirty())
 				DrawDebugBox(GetWorld(), ChunkToWorld(Chunk.Key), (FVector(ChunkScale) * FVector(ChunkSize) / 2.0f), FColor::Green, false, -1, 0, 50.0f);
 
 			if(Chunk.Value->bUpdatingVoxel)
 				DrawDebugBox(GetWorld(), ChunkToWorld(Chunk.Key), (FVector(ChunkScale) * FVector(ChunkSize) / 2.0f), FColor::Yellow, false, -1, 0, 50.0f);
 		}
+	}
+}
+
+void ATerrainGenerator::MoveFinishedWorksWorkerToGenerator()
+{
+	if (!TerrainWorker)
+	{
+		return;
+	}
+
+	FTerrainWorkerInformation FinishedWork;
+	while (TerrainWorker->Dequeue(FinishedWork))
+	{
+		QueuedFinishedWorks.Enqueue(FinishedWork);
 	}
 }
 
@@ -108,11 +123,6 @@ void ATerrainGenerator::GenerateChunk()
 		return;
 	}
 
-	if (ChunkWorker->FinishedWorks.Num() == 0)
-	{
-		return;
-	}
-
 	FTerrainChunkWorkerInformation FinishedWork;
 	if (ChunkWorker->Dequeue(FinishedWork))
 	{
@@ -127,16 +137,20 @@ void ATerrainGenerator::GenerateChunk()
 				TerrainChunk->SetMaterial(0, UMaterial::GetDefaultMaterial(MD_Surface));
 			}
 
-			TerrainChunk->Generator = this;
+			for (int32 Index = 0; Index < FinishedWork.Voxels.Num(); Index++)
+			{
+				TerrainChunk->Voxels[Index] = (new FVoxel(FinishedWork.Voxels[Index]));
+			}
+
 			TerrainChunk->ChunkLocation = FinishedWork.ChunkLocation;
-			TerrainChunk->SetChanges(true);
+			TerrainChunk->SetDirty(true);
 			TerrainChunk->bUpdatingVoxel = false;
 
 			for (auto & ChunkLocation : FinishedWork.EdgeChunks)
 			{
 				if (UTerrainChunk* Chunk = GetChunk(ChunkLocation))
 				{
-					Chunk->SetChanges(true);
+					Chunk->SetDirty(true);
 				}
 			}
 		}
@@ -150,14 +164,8 @@ void ATerrainGenerator::GenerateChunkMesh()
 		return;
 	}
 
-	if (TerrainWorker->FinishedWorks.Num() == 0)
-	{
-		return;
-	}
-
-	
 	FTerrainWorkerInformation FinishedWork;
-	if (TerrainWorker->Dequeue(FinishedWork))
+	while(QueuedFinishedWorks.Dequeue(FinishedWork))
 	{
 		UTerrainChunk** FoundChunk = Chunks.Find(FinishedWork.ChunkLocation);
 		if (!FoundChunk)
@@ -180,11 +188,14 @@ void ATerrainGenerator::GenerateChunkMesh()
 
 		TerrainChunk->ClearAllMeshSections();
 		TerrainChunk->CreateMeshSection_LinearColor(0, FinishedWork.Vertices, FinishedWork.Indices, FinishedWork.Normals, FinishedWork.UVs, FinishedWork.VertexColors, FinishedWork.Tangents, true);
-		if (TerrainChunk->HasChanges())
+		if (TerrainChunk->GetDirty())
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Regenerate Mesh, Outdated"), FinishedWork.Vertices.Num()));
 			UpdateChunk(TerrainChunk->ChunkLocation);
+			return;
 		}
+
+		TerrainChunk->SetArgent(false);
 	}
 }
 
@@ -217,13 +228,14 @@ bool ATerrainGenerator::CreateChunk(FIntVector ChunkLocation)
 		return false;
 	}
 
+	TArray<FVoxel*> Voxels;
+	Voxels.Reserve((ChunkSize.X + 2) * (ChunkSize.Y + 2) * (ChunkSize.Z + 2));
+
 	FTerrainChunkWorkerInformation Information;
+	Information.Voxels = Voxels;
 	Information.ChunkLocation = ChunkLocation;
 	Information.ChunkSize = ChunkSize;
-	Information.Grid = Grid;
 	Information.Generator = this;
-
-	ChunkWorker->Enqueue(Information);
 
 	FString ComponentName;
 	int32 ID = Chunks.Num();
@@ -233,8 +245,11 @@ bool ATerrainGenerator::CreateChunk(FIntVector ChunkLocation)
 	ChunkComponentName.AppendString(ComponentName);
 	UTerrainChunk* NewChunk = NewObject<UTerrainChunk>(this, ChunkComponentName);
 	NewChunk->RegisterComponent();
+	NewChunk->SetGenerator(this);
 	NewChunk->bUpdatingVoxel = true;
 	Chunks.Add(ChunkLocation, NewChunk);
+
+	ChunkWorker->Enqueue(Information);
 	return true;
 }
 
@@ -261,7 +276,7 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 	if (TerrainChunk->bUpdatingMesh)
 	{
 		// 청크가 이미 업데이트 중이면 하지 않고, 다음에 업데이트하도록 표시한다
-		TerrainChunk->SetChanges(true);
+		TerrainChunk->SetDirty(true);
 		return false;
 	}
 
@@ -273,9 +288,6 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 		{
 			for (int32 Z = -1; Z <= 1; Z++)
 			{
-				if(X == 0 && Y == 0 && Z == 0)
-					continue;
-
 				FIntVector NeighborChunkLocation = ChunkLocation + FIntVector(X, Y, Z);
 
 				if (UTerrainChunk* NeighborChunk = GetChunk(NeighborChunkLocation))
@@ -289,18 +301,39 @@ bool ATerrainGenerator::UpdateChunk(FIntVector ChunkLocation)
 		}
 	}
 	TerrainChunk->bUpdatingMesh = true;
-	TerrainChunk->SetChanges(false);
+	TerrainChunk->SetDirty(false);
+	
+
+	TArray<FVoxel*> Voxels;
+	Voxels.Reserve((ChunkSize.X + 2) * (ChunkSize.Y + 2) * (ChunkSize.Z + 2));
+	{
+		SCOPE_CYCLE_COUNTER(STAT_CopyVoxelDataToTerrainWorker);
+
+		for (int32 Index = 0; Index < TerrainChunk->Voxels.Num(); Index++)
+		{
+			Voxels.Add(new FVoxel(TerrainChunk->Voxels[Index]));
+		}
+	}
 
 	FTerrainWorkerInformation Information;
-	Information.Grid = Grid;
 	Information.Chunk = TerrainChunk;
 	Information.ChunkLocation = ChunkLocation;
 	Information.ChunkScale = ChunkScale;
 	Information.ChunkSize = ChunkSize;
 	Information.IsoValue = IsoValue;
 	Information.Generator = this;
+	Information.Voxels = Voxels;
 
-	TerrainWorker->Enqueue(Information);
+	if (TerrainChunk->GetArgent())
+	{
+		FTerrainWorker::GenerateSurfaceByMarchingCubes(Information.Voxels , Information.Chunk, Information.IsoValue, Information.ChunkLocation, Information.ChunkSize, Information.ChunkScale, Information.Vertices, Information.Indices, Information.Normals, Information.UVs, Information.VertexColors, Information.Tangents);
+		Information.bValid = true;
+		QueuedFinishedWorks.Enqueue(Information);
+	}
+	else
+	{
+		TerrainWorker->Enqueue(Information);
+	}
 	return true;
 }
 
@@ -322,8 +355,6 @@ bool ATerrainGenerator::DestroyChunk(FIntVector ChunkLocation)
 
 bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLateUpdate)
 {
-	Grid->SetDensity(GridLocation, Value);
-
 	int32 ChunkX = FMath::FloorToInt((float)GridLocation.X / ChunkSize.X);
 	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
 	int32 ChunkZ = FMath::FloorToInt((float)GridLocation.Z / ChunkSize.Z);
@@ -335,18 +366,22 @@ bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLat
 		return false;
 	}
 
+	TerrainChunk->SetVoxel(GridLocation, Value);
+
 	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
 	{
 		if (bLateUpdate)
 		{
 			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ)))
 			{
-				Chunk->SetChanges(true);
+				Chunk->SetVoxel(GridLocation, Value);
+				Chunk->SetDirty(true);
 			}
 
 			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ)))
 			{
-				Chunk->SetChanges(true);
+				Chunk->SetVoxel(GridLocation, Value);
+				Chunk->SetDirty(true);
 			}
 		}
 		else
@@ -362,12 +397,14 @@ bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLat
 		{
 			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ)))
 			{
-				Chunk->SetChanges(true);
+				Chunk->SetVoxel(GridLocation, Value);
+				Chunk->SetDirty(true);
 			}
 
 			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ)))
 			{
-				Chunk->SetChanges(true);
+				Chunk->SetVoxel(GridLocation, Value);
+				Chunk->SetDirty(true);
 			}
 		}
 		else
@@ -383,12 +420,14 @@ bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLat
 		{
 			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1)))
 			{
-				Chunk->SetChanges(true);
+				Chunk->SetVoxel(GridLocation, Value);
+				Chunk->SetDirty(true);
 			}
 
 			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1)))
 			{
-				Chunk->SetChanges(true);
+				Chunk->SetVoxel(GridLocation, Value);
+				Chunk->SetDirty(true);
 			}
 		}
 		else
@@ -400,7 +439,7 @@ bool ATerrainGenerator::SetVoxel(FIntVector GridLocation, float Value, bool bLat
 
 	if (bLateUpdate)
 	{
-		TerrainChunk->SetChanges(true);
+		TerrainChunk->SetDirty(true);
 	}
 	else
 	{
@@ -417,92 +456,172 @@ void ATerrainGenerator::SetVoxels(const TArray<FIntVector>& GridLocations, float
 	}
 }
 
-bool ATerrainGenerator::AddVoxel(FIntVector GridLocation, float Value, bool bLateUpdate /*= false*/)
+bool ATerrainGenerator::AddVoxel(FIntVector GridLocation, float Value, bool bArgent)
 {
-	Grid->AddDensity(GridLocation, Value);
-
 	int32 ChunkX = FMath::FloorToInt((float)GridLocation.X / ChunkSize.X);
 	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
 	int32 ChunkZ = FMath::FloorToInt((float)GridLocation.Z / ChunkSize.Z);
+	FIntVector ChunkLocation = FIntVector(ChunkX, ChunkY, ChunkZ);
 
-	UTerrainChunk* TerrainChunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+	UTerrainChunk* TerrainChunk = GetChunk(ChunkLocation);
 	if (!TerrainChunk)
 	{
-		CreateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+		CreateChunk(ChunkLocation);
 		return false;
 	}
 
+	TerrainChunk->AddVoxel(GridLocation, Value);
+	TerrainChunk->SetDirty(true);
+	TerrainChunk->SetArgent(bArgent);
+
 	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
 	{
-		if (bLateUpdate)
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ)))
 		{
-			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ)))
+			if (Chunk->AddVoxel(GridLocation, Value))
 			{
-				Chunk->SetChanges(true);
-			}
-
-			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ)))
-			{
-				Chunk->SetChanges(true);
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
 			}
 		}
-		else
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ)))
 		{
-			UpdateChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ));
-			UpdateChunk(FIntVector(ChunkX + 1, ChunkY, ChunkZ));
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
 		}
 	}
 
 	if (FMath::Fmod(GridLocation.Y, ChunkSize.Y) == 0.0f)
 	{
-		if (bLateUpdate)
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ)))
 		{
-			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ)))
+			if (Chunk->AddVoxel(GridLocation, Value))
 			{
-				Chunk->SetChanges(true);
-			}
-
-			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ)))
-			{
-				Chunk->SetChanges(true);
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
 			}
 		}
-		else
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ)))
 		{
-			UpdateChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ));
-			UpdateChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ));
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
 		}
 	}
 
 	if (FMath::Fmod(GridLocation.Z, ChunkSize.Z) == 0.0f)
 	{
-		if (bLateUpdate)
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1)))
 		{
-			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1)))
+			if (Chunk->AddVoxel(GridLocation, Value))
 			{
-				Chunk->SetChanges(true);
-			}
-
-			if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1)))
-			{
-				Chunk->SetChanges(true);
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
 			}
 		}
-		else
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1)))
 		{
-			UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ + 1));
-			UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ - 1));
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
 		}
 	}
 
-	if (bLateUpdate)
+	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f && FMath::Fmod(GridLocation.Y, ChunkSize.Y) == 0.0f)
 	{
-		TerrainChunk->SetChanges(true);
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY + 1, ChunkZ)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY - 1, ChunkZ)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
 	}
-	else
+
+	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f && FMath::Fmod(GridLocation.Z, ChunkSize.Z) == 0.0f)
 	{
-		UpdateChunk(FIntVector(ChunkX, ChunkY, ChunkZ));
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY , ChunkZ + 1)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY, ChunkZ - 1)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
 	}
+
+	if (FMath::Fmod(GridLocation.Y, ChunkSize.Y) == 0.0f && FMath::Fmod(GridLocation.Z, ChunkSize.Z) == 0.0f)
+	{
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY + 1, ChunkZ + 1)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX, ChunkY - 1, ChunkZ - 1)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
+	}
+
+	if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f && FMath::Fmod(GridLocation.Y, ChunkSize.Y) == 0.0f && FMath::Fmod(GridLocation.Z, ChunkSize.Z) == 0.0f)
+	{
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX + 1, ChunkY + 1, ChunkZ + 1)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
+
+		if (UTerrainChunk* Chunk = GetChunk(FIntVector(ChunkX - 1, ChunkY - 1, ChunkZ - 1)))
+		{
+			if (Chunk->AddVoxel(GridLocation, Value))
+			{
+				Chunk->SetDirty(true);
+				Chunk->SetArgent(bArgent);
+			}
+		}
+	}
+
+
 	return true;
 }
 
@@ -510,7 +629,7 @@ void ATerrainGenerator::AddVoxels(const TArray<FIntVector>& GridLocations, float
 {
 	for (auto & GridLocation : GridLocations)
 	{
-		AddVoxel(GridLocation, Value, true);
+		AddVoxel(GridLocation, Value, false);
 	}
 }
 
@@ -521,14 +640,20 @@ void ATerrainGenerator::AddVoxelArray(const TArray<FIntVector>& GridLocations, c
 
 	for (int32 Index = 0; Index < GridLocations.Num(); Index++)
 	{
-		AddVoxel(GridLocations[Index], Values[Index], true);
+		AddVoxel(GridLocations[Index], Values[Index], false);
 	}
 }
 
 float ATerrainGenerator::GetVoxel(FIntVector GridLocation)
 {
-	if (Grid)
-		return Grid->GetDensity(GridLocation);
+	int32 ChunkX = FMath::FloorToInt((float)GridLocation.X / ChunkSize.X);
+	int32 ChunkY = FMath::FloorToInt((float)GridLocation.Y / ChunkSize.Y);
+	int32 ChunkZ = FMath::FloorToInt((float)GridLocation.Z / ChunkSize.Z);
+
+	if (UTerrainChunk* TerrainChunk = GetChunk(FIntVector(ChunkX, ChunkY, ChunkZ)))
+	{
+		return TerrainChunk->GetVoxelDensity(GridLocation);
+	}
 
 	return 0;
 }
@@ -537,7 +662,7 @@ void ATerrainGenerator::UpdateTerrain()
 {
 	for (const TPair<FIntVector, UTerrainChunk*> Chunk : Chunks)
 	{
-		if (Chunk.Value->HasChanges())
+		if (Chunk.Value->GetDirty())
 		{
 			UpdateChunk(Chunk.Key);
 		}
@@ -579,4 +704,17 @@ FORCEINLINE FIntVector ATerrainGenerator::GetPlayerChunkPosition() const
 {
 	FIntVector ChunkPosition = LastCharacterChunkLocation;
 	return ChunkPosition;
+}
+
+int32 ATerrainGenerator::To1DIndex(FIntVector Location, FIntVector ChunkSize)
+{
+	return Location.Z + Location.Y * ChunkSize.Z + Location.X * ChunkSize.Z * ChunkSize.Y;
+}
+
+FIntVector ATerrainGenerator::To3DIndex(int32 Index, FIntVector ChunkSize)
+{
+	int32 Z = Index % ChunkSize.Z;
+	int32 Y = (Index / ChunkSize.Z) % ChunkSize.Y;
+	int32 X = Index / (ChunkSize.Y * ChunkSize.Z);
+	return FIntVector(X, Y, Z);
 }

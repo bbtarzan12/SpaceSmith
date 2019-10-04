@@ -9,6 +9,10 @@
 #include "MarchingCubes/TerrainGenerator.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes"), STAT_PerformMarchingCubes, STATGROUP_TerrainWorker);
+DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes ~ GetVoxelDensity"), STAT_GetDensity, STATGROUP_TerrainWorker);
+DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes ~ FindIntersectionBits"), STAT_FindIntersectionBits, STATGROUP_TerrainWorker);
+DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes ~ InterpolateVertices"), STAT_InterpolateVertices, STATGROUP_TerrainWorker);
+DECLARE_CYCLE_STAT(TEXT("Terrain Worker ~ PerformMarchingCubes ~ AddTriangles"), STAT_AddTriangles, STATGROUP_TerrainWorker);
 
 FTerrainWorker::FTerrainWorker() : StopTaskCounter(0), Thread(nullptr), bRunning(false)
 {
@@ -75,7 +79,7 @@ uint32 FTerrainWorker::Run()
 		QueuedWorks.HeapPop(WorkerInformation, ChunkInformationPredicate());
 		Mutex.Unlock();
 
-		int32 NumTriangles = GenerateSurfaceByMarchingCubes(WorkerInformation.Grid, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
+		int32 NumTriangles = GenerateSurfaceByMarchingCubes(WorkerInformation.Voxels, WorkerInformation.Chunk, WorkerInformation.IsoValue, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.ChunkScale, WorkerInformation.Vertices, WorkerInformation.Indices, WorkerInformation.Normals, WorkerInformation.UVs, WorkerInformation.VertexColors, WorkerInformation.Tangents);
 		if (NumTriangles == -1)
 			WorkerInformation.bValid = false;
 		else
@@ -97,42 +101,52 @@ void FTerrainWorker::Stop()
 	StopTaskCounter.Increment();
 }
 
-int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrainChunk* Chunk, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FLinearColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
+int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(TArray<FVoxel*>& Voxels, UTerrainChunk* Chunk, float IsoValue, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, const FVector& ChunkScale, TArray<FVector>& Vertices, TArray<int32>& Indices, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FLinearColor>& VertexColors, TArray<FProcMeshTangent>& Tangents)
 {
-	SCOPE_CYCLE_COUNTER( STAT_PerformMarchingCubes );
-	FIntVector ChunkStartSize = FIntVector(ChunkLocation.X * ChunkSize.X, ChunkLocation.Y * ChunkSize.Y, ChunkLocation.Z * ChunkSize.Z);
-	FIntVector ChunkEndSize = FIntVector((ChunkLocation.X + 1)* ChunkSize.X, (ChunkLocation.Y + 1) * ChunkSize.Y, (ChunkLocation.Z + 1) * ChunkSize.Z);
+	SCOPE_CYCLE_COUNTER(STAT_PerformMarchingCubes);
 
 	int NumTriangles = 0;
-	for (int32 X = ChunkStartSize.X; X < ChunkEndSize.X; X++)
+	for (int32 X = 0; X < ChunkSize.X; X++)
 	{
-		for (int32 Y = ChunkStartSize.Y; Y < ChunkEndSize.Y; Y++)
+		for (int32 Y = 0; Y < ChunkSize.Y; Y++)
 		{
-			for (int32 Z = ChunkStartSize.Z; Z < ChunkEndSize.Z; Z++)
+			for (int32 Z = 0; Z < ChunkSize.Z; Z++)
 			{
-				if (Chunk->HasChanges())
+				if (Chunk->GetDirty())
 				{
 					return -1;
 				}
 
-				FIntVector GridLocation = FIntVector(X, Y, Z);
+				int32 VoxelIndex = ATerrainGenerator::To1DIndex(FIntVector(X + 1, Y + 1, Z + 1), ChunkSize + FIntVector(2, 2, 2));
+				FIntVector GridLocation = FIntVector
+				(
+					X + ChunkLocation.X * ChunkSize.X,
+					Y + ChunkLocation.Y * ChunkSize.Y,
+					Z + ChunkLocation.Z * ChunkSize.Z
+				);
 
 				// 큐브 꼭짓점의 값
 				float P[8];
-				for (int32 Index = 0; Index < 8; Index++)
 				{
-					P[Index] = Grid->GetDensity(GridLocation + CornerTable[Index]);
+					SCOPE_CYCLE_COUNTER(STAT_GetDensity);
+					for (int32 Index = 0; Index < 8; Index++)
+					{
+						P[Index] = Voxels[ATerrainGenerator::To1DIndex(FIntVector(FIntVector(X + 1, Y + 1, Z + 1) + CornerTable[Index]), ChunkSize + FIntVector(2, 2, 2))]->Density;
+					}
 				}
-				float Height = Grid->GetHeight(FIntVector(X, Y, Z));
+				float Height = Voxels[VoxelIndex]->Height;
 
 				// 각 꼭짓점의 값이 IsoLevel과 비교해서 Surface 안쪽인지 확인
 				int32 IntersectBitMap = 0;
 
-				for (int32 Index = 0; Index < 8; Index++)
 				{
-					if (P[Index] > IsoValue)
+					SCOPE_CYCLE_COUNTER(STAT_FindIntersectionBits);
+					for (int32 Index = 0; Index < 8; Index++)
 					{
-						IntersectBitMap |= 1 << Index;
+						if (P[Index] > IsoValue)
+						{
+							IntersectBitMap |= 1 << Index;
+						}
 					}
 				}
 
@@ -144,68 +158,74 @@ int32 FTerrainWorker::GenerateSurfaceByMarchingCubes(UTerrainData* Grid, UTerrai
 
 				FVector InterpolatedPoints[12];
 
-				for (int32 Index = 0; Index < 12; Index++)
 				{
-					if (EdgeBits & (1 << Index))
+					SCOPE_CYCLE_COUNTER(STAT_InterpolateVertices);
+					for (int32 Index = 0; Index < 12; Index++)
 					{
-						InterpolatedPoints[Index] = VectorInterp(IsoValue, FVector(ChunkLocation + GridLocation + CornerTable[CornerOfEdgeTable[Index][0]]), FVector(ChunkLocation + GridLocation + CornerTable[CornerOfEdgeTable[Index][1]]), P[CornerOfEdgeTable[Index][0]], P[CornerOfEdgeTable[Index][1]]);
+						if (EdgeBits & (1 << Index))
+						{
+							InterpolatedPoints[Index] = VectorInterp(IsoValue, FVector(ChunkLocation + GridLocation + CornerTable[CornerOfEdgeTable[Index][0]]), FVector(ChunkLocation + GridLocation + CornerTable[CornerOfEdgeTable[Index][1]]), P[CornerOfEdgeTable[Index][0]], P[CornerOfEdgeTable[Index][1]]);
+						}
 					}
 				}
 
-				for (int32 Index = 0; TriTable[IntersectBitMap][Index] != -1; Index+=3)
 				{
-					// TriTable의 삼각형들을 순회하면서 List에 삼각형 추가
+					SCOPE_CYCLE_COUNTER(STAT_AddTriangles);
+					for (int32 Index = 0; TriTable[IntersectBitMap][Index] != -1; Index += 3)
+					{
+						// TriTable의 삼각형들을 순회하면서 List에 삼각형 추가
 
-					int32 Index0 = TriTable[IntersectBitMap][Index];
-					int32 Index1 = TriTable[IntersectBitMap][Index + 1];
-					int32 Index2 = TriTable[IntersectBitMap][Index + 2];
+						int32 Index0 = TriTable[IntersectBitMap][Index];
+						int32 Index1 = TriTable[IntersectBitMap][Index + 1];
+						int32 Index2 = TriTable[IntersectBitMap][Index + 2];
 
-					FVector Vertex0 = ChunkScale * (InterpolatedPoints[Index0] - FVector(ChunkLocation));
-					FVector Vertex1 = ChunkScale * (InterpolatedPoints[Index1] - FVector(ChunkLocation));
-					FVector Vertex2 = ChunkScale * (InterpolatedPoints[Index2] - FVector(ChunkLocation));
+						FVector Vertex0 = ChunkScale * (InterpolatedPoints[Index0] - FVector(ChunkLocation));
+						FVector Vertex1 = ChunkScale * (InterpolatedPoints[Index1] - FVector(ChunkLocation));
+						FVector Vertex2 = ChunkScale * (InterpolatedPoints[Index2] - FVector(ChunkLocation));
 
-					Vertices.Add(Vertex0);
-					Vertices.Add(Vertex1);
-					Vertices.Add(Vertex2);
+						Vertices.Add(Vertex0);
+						Vertices.Add(Vertex1);
+						Vertices.Add(Vertex2);
 
-					int32 NumIndices = Indices.Num();
-					Indices.Add(NumIndices);
-					Indices.Add(NumIndices + 1);
-					Indices.Add(NumIndices + 2);
+						int32 NumIndices = Indices.Num();
+						Indices.Add(NumIndices);
+						Indices.Add(NumIndices + 1);
+						Indices.Add(NumIndices + 2);
 
-					UVs.Add(FVector2D(Vertex0.X / 100.0f, Vertex0.Y / 100.0f));
-					UVs.Add(FVector2D(Vertex1.X / 100.0f, Vertex1.Y / 100.0f));
-					UVs.Add(FVector2D(Vertex2.X / 100.0f, Vertex2.Y / 100.0f));
+						UVs.Add(FVector2D(Vertex0.X / 100.0f, Vertex0.Y / 100.0f));
+						UVs.Add(FVector2D(Vertex1.X / 100.0f, Vertex1.Y / 100.0f));
+						UVs.Add(FVector2D(Vertex2.X / 100.0f, Vertex2.Y / 100.0f));
 
-					VertexColors.Add(FLinearColor(Height, Height, Height, 1));
-					VertexColors.Add(FLinearColor(Height, Height, Height, 1));
-					VertexColors.Add(FLinearColor(Height, Height, Height, 1));
+						VertexColors.Add(FLinearColor(Height, Height, Height, 1));
+						VertexColors.Add(FLinearColor(Height, Height, Height, 1));
+						VertexColors.Add(FLinearColor(Height, Height, Height, 1));
 
-					FVector Edge21 = Vertex1 - Vertex2;
-					FVector Edge20 = Vertex0 - Vertex2;
-					FVector Normal = (Edge21 ^ Edge20).GetSafeNormal();
+						FVector Edge21 = Vertex1 - Vertex2;
+						FVector Edge20 = Vertex0 - Vertex2;
+						FVector Normal = (Edge21 ^ Edge20).GetSafeNormal();
 
-					FVector FaceTangentX = Edge20.GetSafeNormal();
-					FVector FaceTangentY = (FaceTangentX ^ Normal).GetSafeNormal();
-					FVector FaceTangentZ = Normal;
+						FVector FaceTangentX = Edge20.GetSafeNormal();
+						FVector FaceTangentY = (FaceTangentX ^ Normal).GetSafeNormal();
+						FVector FaceTangentZ = Normal;
 
-					// 그람-슈미트 직교화를 사용해서 X가 Z의 직교로 만듦
-					FaceTangentX -= FaceTangentZ * (FaceTangentZ | FaceTangentX);
-					FaceTangentX.Normalize();
+						// 그람-슈미트 직교화를 사용해서 X가 Z의 직교로 만듦
+						FaceTangentX -= FaceTangentZ * (FaceTangentZ | FaceTangentX);
+						FaceTangentX.Normalize();
 
-					// 외적을 할 때 탄젠트Y를 뒤집어야 하는지 확인
-					const bool bFlipBitangent = ((FaceTangentZ ^ FaceTangentX) | FaceTangentY) < 0.f;
-					FProcMeshTangent Tangent = FProcMeshTangent(FaceTangentX, bFlipBitangent);
+						// 외적을 할 때 탄젠트Y를 뒤집어야 하는지 확인
+						const bool bFlipBitangent = ((FaceTangentZ ^ FaceTangentX) | FaceTangentY) < 0.f;
+						FProcMeshTangent Tangent = FProcMeshTangent(FaceTangentX, bFlipBitangent);
 
-					Normals.Add(Normal);
-					Normals.Add(Normal);
-					Normals.Add(Normal);
+						Normals.Add(Normal);
+						Normals.Add(Normal);
+						Normals.Add(Normal);
 
-					Tangents.Add(Tangent);
-					Tangents.Add(Tangent);
-					Tangents.Add(Tangent);
+						Tangents.Add(Tangent);
+						Tangents.Add(Tangent);
+						Tangents.Add(Tangent);
 
-					NumTriangles += 1;
+						NumTriangles += 1;
+					}
 				}
 			}
 		}

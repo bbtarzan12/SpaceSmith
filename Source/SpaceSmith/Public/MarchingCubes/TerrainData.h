@@ -10,15 +10,30 @@ struct SPACESMITH_API FVoxel
 	float Density;
 	float Height;
 
+	FVoxel()
+	{
+		Density = 0.0f;
+		Height = 0.0f;
+	}
+
+	FVoxel(FVoxel* Voxel)
+	{
+		if (Voxel)
+		{
+			Density = Voxel->Density;
+			Height = Voxel->Height;
+		}
+	}
+
 	FVoxel(float NewDensity)
 	{
 		Density = NewDensity;
 	}
 
-	FVoxel(float NewDensity, float NewTestValue)
+	FVoxel(float NewDensity, float NewHeight)
 	{
 		Density = NewDensity;
-		NewTestValue = NewTestValue;
+		Height = NewHeight;
 	}
 };
 
@@ -37,6 +52,5 @@ public:
 
 public:
 	TMap<FIntVector, FVoxel*> GridData;
-	FCriticalSection CriticalSection;
 
 };

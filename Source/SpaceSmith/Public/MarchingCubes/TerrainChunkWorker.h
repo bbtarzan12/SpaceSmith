@@ -10,8 +10,8 @@ class UTerrainData;
 
 struct FTerrainChunkWorkerInformation
 {
+	TArray<FVoxel*> Voxels;
 	ATerrainGenerator* Generator;
-	UTerrainData* Grid;
 	FIntVector ChunkLocation;
 	FIntVector ChunkSize;
 	TArray<FIntVector> EdgeChunks;
@@ -37,7 +37,7 @@ public:
 
 	static void GenerateChunk
 	(
-		UTerrainData* Grid,
+		TArray<FVoxel*>& Voxels,
 		const FIntVector& ChunkLocation,
 		const FIntVector& ChunkSize,
 		TArray<FIntVector>& EdgeChunks

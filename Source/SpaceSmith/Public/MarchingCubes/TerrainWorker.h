@@ -12,11 +12,12 @@ DECLARE_STATS_GROUP(TEXT("Terrain Worker"), STATGROUP_TerrainWorker, STATCAT_Adv
 class UTerrainData;
 class UTerrainChunk;
 class ATerrainGenerator;
+struct FVoxel;
 
 struct FTerrainWorkerInformation
 {
+	TArray<FVoxel*> Voxels;
 	ATerrainGenerator* Generator;
-	UTerrainData* Grid;
 	UTerrainChunk* Chunk;
 	FIntVector ChunkLocation;
 	FIntVector ChunkSize;
@@ -52,7 +53,7 @@ public:
 
 	static int32 GenerateSurfaceByMarchingCubes
 	(
-		UTerrainData* Grid,
+		TArray<FVoxel*>& Voxels,
 		UTerrainChunk* Chunk,
 		float IsoValue,
 		const FIntVector& ChunkLocation,

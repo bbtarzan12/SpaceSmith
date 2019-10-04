@@ -65,10 +65,13 @@ uint32 FTerrainChunkWorker::Run()
 		}
 
 		FTerrainChunkWorkerInformation WorkerInformation;
+
 		Mutex.Lock();
 		QueuedWorks.HeapPop(WorkerInformation, ChunkInformationPredicate());
 		Mutex.Unlock();
-		GenerateChunk(WorkerInformation.Grid, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.EdgeChunks);
+
+		GenerateChunk(WorkerInformation.Voxels, WorkerInformation.ChunkLocation, WorkerInformation.ChunkSize, WorkerInformation.EdgeChunks);
+		
 		Mutex.Lock();
 		FinishedWorks.HeapPush(WorkerInformation, ChunkInformationPredicate());
 		Mutex.Unlock();
@@ -85,13 +88,13 @@ void FTerrainChunkWorker::Stop()
 	StopTaskCounter.Increment();
 }
 
-void FTerrainChunkWorker::GenerateChunk(UTerrainData* Grid, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, TArray<FIntVector>& EdgeChunks)
+void FTerrainChunkWorker::GenerateChunk(TArray<FVoxel*>& Voxels, const FIntVector& ChunkLocation, const FIntVector& ChunkSize, TArray<FIntVector>& EdgeChunks)
 {
-	for (int32 X = 0; X < ChunkSize.X; X++)
+	for (int32 X = -1; X <= ChunkSize.X; X++)
 	{
-		for (int32 Y = 0; Y < ChunkSize.Y; Y++)
+		for (int32 Y = -1; Y <= ChunkSize.Y; Y++)
 		{
-			for (int32 Z = 0; Z < ChunkSize.Z; Z++)
+			for (int32 Z = -1; Z <= ChunkSize.Z; Z++)
 			{
 				int32 SampleX = X + ChunkSize.X * ChunkLocation.X;
 				int32 SampleY = Y + ChunkSize.Y * ChunkLocation.Y;
@@ -121,8 +124,7 @@ void FTerrainChunkWorker::GenerateChunk(UTerrainData* Grid, const FIntVector& Ch
 				FIntVector GridLocation = FIntVector(SampleX, SampleY, SampleZ);
 				float Height = FMath::Clamp((SampleZ + 5) / 30.0f, 0.0f, 1.0f);
 
-				Grid->SetDensity(GridLocation, Density);
-				Grid->SetHeight(GridLocation, Height);
+				Voxels.Add(new FVoxel(Density, Height));
 
 				if (FMath::Fmod(GridLocation.X, ChunkSize.X) == 0.0f)
 				{

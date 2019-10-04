@@ -6,6 +6,8 @@
 #include "ProceduralMeshComponent.h"
 #include "TerrainChunk.generated.h"
 
+struct FVoxel;
+
 /**
  * 
  */
@@ -17,8 +19,16 @@ class SPACESMITH_API UTerrainChunk : public UProceduralMeshComponent
 public:
 	UTerrainChunk();
 
-	void SetChanges(bool bChanges);
-	bool HasChanges();
+	void SetGenerator(class ATerrainGenerator* NewGenerator);
+	void SetDirty(bool bNewDirty);
+	bool GetDirty();
+
+	void SetArgent(bool bNewArgent);
+	bool GetArgent();
+
+	void SetVoxel(FIntVector WorldGridLocation, float Value);
+	bool AddVoxel(FIntVector WorldGridLocation, float Value);
+	float GetVoxelDensity(FIntVector WorldGridLocation);
 
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
@@ -33,9 +43,14 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
 	class ATerrainGenerator* Generator;
 
+	TArray<FVoxel*> Voxels;
+
 	FCriticalSection Mutex;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Terrain")
-	bool bHasChanges;
+	bool bDirty;
+
+	UPROPERTY(VisibleAnywhere, Category = "Terrain")
+	bool bArgent;
 };

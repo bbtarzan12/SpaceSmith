@@ -6,7 +6,6 @@
 #include <../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h>
 #include "MarchingCubes/TerrainChunk.h"
 #include "MarchingCubes/TerrainData.h"
-#include "../Plugins/SimplexNoise/Source/SimplexNoise/Public/SimplexNoiseBPLibrary.h"
 #include "SpaceSmithCharacter.h"
 #include "Miscellaneous/UtilityTimer.h"
 #include "MarchingCubes/TerrainChunkWorker.h"
@@ -29,10 +28,31 @@ void ATerrainGenerator::BeginPlay()
 	TerrainWorker = new FTerrainWorker();
 	TerrainWorker->Start();
 
-	ChunkWorker = new FTerrainChunkWorker();
+	ChunkWorker = new FTerrainChunkWorker(this);
 	ChunkWorker->Start();
 
 	Character = Cast<ASpaceSmithCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+}
+
+void ATerrainGenerator::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (TerrainWorker)
+	{
+		TerrainWorker->EnsureCompletion();
+		TerrainWorker->Shutdown();
+		delete TerrainWorker;
+		TerrainWorker = nullptr;
+	}
+
+	if (ChunkWorker)
+	{
+		ChunkWorker->EnsureCompletion();
+		ChunkWorker->Shutdown();
+		delete ChunkWorker;
+		ChunkWorker = nullptr;
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
@@ -201,22 +221,6 @@ void ATerrainGenerator::GenerateChunkMesh()
 
 void ATerrainGenerator::BeginDestroy()
 {
-	if (TerrainWorker)
-	{
-		TerrainWorker->EnsureCompletion();
-		TerrainWorker->Shutdown();
-		delete TerrainWorker;
-		TerrainWorker = nullptr;
-	}
-
-	if (ChunkWorker)
-	{
-		ChunkWorker->EnsureCompletion();
-		ChunkWorker->Shutdown();
-		delete ChunkWorker;
-		ChunkWorker = nullptr;
-	}
-
 	Super::BeginDestroy();
 }
 

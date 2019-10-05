@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include <Runnable.h>
-#include "TerrainGenerator.h"
 
 class UTerrainData;
+class ATerrainGenerator;
+struct FVoxel;
 
 struct FTerrainChunkWorkerInformation
 {
@@ -23,7 +24,7 @@ struct FTerrainChunkWorkerInformation
 class SPACESMITH_API FTerrainChunkWorker : public FRunnable
 {
 public:
-	FTerrainChunkWorker();
+	FTerrainChunkWorker(ATerrainGenerator* Outer);
 	virtual ~FTerrainChunkWorker() override;
 
 	void EnsureCompletion();
@@ -35,7 +36,7 @@ public:
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 
-	static void GenerateChunk
+	void GenerateChunk
 	(
 		TArray<FVoxel*>& Voxels,
 		const FIntVector& ChunkLocation,
@@ -55,12 +56,7 @@ public:
 private:
 	struct ChunkInformationPredicate
 	{
-		bool operator()(const FTerrainChunkWorkerInformation& A, const FTerrainChunkWorkerInformation& B) const
-		{
-			float DistanceA = (A.Generator->GetPlayerChunkPosition() - A.ChunkLocation).Size();
-			float DistanceB = (B.Generator->GetPlayerChunkPosition() - B.ChunkLocation).Size();
-			return DistanceA < DistanceB;
-		}
+		bool operator()(const FTerrainChunkWorkerInformation& A, const FTerrainChunkWorkerInformation& B) const;
 	};
 
 	FThreadSafeCounter StopTaskCounter;
@@ -68,4 +64,12 @@ private:
 	bool bRunning;
 	FCriticalSection Mutex;
 
+	UPROPERTY()
+	class UUFNNoiseGenerator* LandNoise;
+
+	UPROPERTY()
+	class UUFNNoiseGenerator* MountainNoise;
+
+	UPROPERTY()
+	class UUFNNoiseGenerator* MountainMaskNoise;
 };

@@ -12,9 +12,19 @@
 				"Engine",
 				"UMG",
 				"Foliage",
-        "CoreUObject",
-        "ProceduralMeshComponent"
+				"CoreUObject",
+				"ProceduralMeshComponent"
 			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "UnrealFastNoisePlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "SimplexNoise",
+			"Enabled": false
 		}
 	]
 }

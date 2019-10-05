@@ -3,10 +3,19 @@
 
 #include "TerrainChunkWorker.h"
 #include "MarchingCubes/TerrainData.h"
-#include "../../../../../../Source/SimplexNoise/Public/SimplexNoiseBPLibrary.h"
+#include "../../UnrealFastNoise/Source/UnrealFastNoisePlugin/Public/UFNBlueprintFunctionLibrary.h"
+#include "TerrainGenerator.h"
 
-FTerrainChunkWorker::FTerrainChunkWorker() : StopTaskCounter(0), Thread(nullptr), bRunning(false)
+
+FTerrainChunkWorker::FTerrainChunkWorker(ATerrainGenerator* Outer) : StopTaskCounter(0), Thread(nullptr), bRunning(false)
 {
+	LandNoise = UUFNBlueprintFunctionLibrary::CreateFractalNoiseGenerator(Outer, EFractalNoiseType::FractalSimplex, 0, 0.05f, 0.5f, EInterp::InterpQuintic, FBM, 3);
+	MountainNoise = UUFNBlueprintFunctionLibrary::CreateFractalNoiseGenerator(Outer, EFractalNoiseType::FractalSimplex, 0, 0.01f, 0.5f, EInterp::InterpQuintic, FBM, 3);
+	MountainMaskNoise = UUFNBlueprintFunctionLibrary::CreateFractalNoiseGenerator(Outer, EFractalNoiseType::FractalSimplex, 0, 0.001f, 0.5f, EInterp::InterpQuintic, FBM, 3);
+
+	LandNoise->AddToRoot();
+	MountainNoise->AddToRoot();
+	MountainMaskNoise->AddToRoot();
 }
 
 FTerrainChunkWorker::~FTerrainChunkWorker()
@@ -32,6 +41,10 @@ void FTerrainChunkWorker::Shutdown()
 {
 	if (!Thread)
 		return;
+
+	LandNoise->RemoveFromRoot();
+	MountainNoise->RemoveFromRoot();
+	MountainMaskNoise->RemoveFromRoot();
 
 	Thread->Kill(true);
 }
@@ -102,27 +115,33 @@ void FTerrainChunkWorker::GenerateChunk(TArray<FVoxel*>& Voxels, const FIntVecto
 
 				float Density = -SampleZ;
 
-				float Land = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.0f, 1.0f, 0.005f);
-				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.5f, 0.5f, 0.01f);
-				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.25f, 0.25f, 0.02f);
-				Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.125f, 0.125f, 0.2f);
-				
-				float Mountain2D = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, 0.0f, 30.0f, 0.01f);
-				Mountain2D += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.25f, 15.0f, 0.02f);
-				Mountain2D += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.625f, 7.0f, 0.04f);
+				//float Land = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.0f, 1.0f, 0.005f);
+				//Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.5f, 0.5f, 0.01f);
+				//Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.25f, 0.25f, 0.02f);
+				//Land += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.125f, 0.125f, 0.2f);
+				//
+				//float Mountain2D = USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, 0.0f, 30.0f, 0.01f);
+				//Mountain2D += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -1.25f, 15.0f, 0.02f);
+				//Mountain2D += USimplexNoiseBPLibrary::SimplexNoiseInRange2D(SampleX, SampleY, -0.625f, 7.0f, 0.04f);
 
-				float MountainMask1 = USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.001f);
-				MountainMask1 *= USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.002f);
+				//float MountainMask1 = USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.001f);
+				//MountainMask1 *= USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.002f);
 
-				float MountainMask2 = USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.003f);
-				MountainMask2 *= USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.006f);
+				//float MountainMask2 = USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.003f);
+				//MountainMask2 *= USimplexNoiseBPLibrary::SimplexNoise012D(SampleX, SampleY, 0.006f);
+
+				float Land = LandNoise->GetNoise2DInRange(SampleX, SampleY, -1.0f, 1.0f);
+				float Mountain = MountainNoise->GetNoise2DInRange(SampleX, SampleY, 0.0f, 100.0f);
+				float MountainMask = MountainMaskNoise->GetNoise2DInRange(SampleX, SampleY, 0.0f, 1.0f);
+
+				MountainMask = FMath::Pow(MountainMask, 2.0f);
 
 				Density += Land;
-				Density += Mountain2D * MountainMask1 * MountainMask2;
+				Density += Mountain * MountainMask;
 				Density = FMath::Clamp(Density, 0.0f, 1.0f);
 
 				FIntVector GridLocation = FIntVector(SampleX, SampleY, SampleZ);
-				float Height = FMath::Clamp((SampleZ + 5) / 30.0f, 0.0f, 1.0f);
+				float Height = FMath::Clamp((SampleZ + 5) / 50.0f, 0.0f, 1.0f);
 
 				Voxels.Add(new FVoxel(Density, Height));
 
@@ -163,4 +182,11 @@ bool FTerrainChunkWorker::Dequeue(FTerrainChunkWorkerInformation& Work)
 	FinishedWorks.HeapPop(Work, ChunkInformationPredicate());
 	Mutex.Unlock();
 	return true;
+}
+
+bool FTerrainChunkWorker::ChunkInformationPredicate::operator()(const FTerrainChunkWorkerInformation& A, const FTerrainChunkWorkerInformation& B) const
+{
+	float DistanceA = (A.Generator->GetPlayerChunkPosition() - A.ChunkLocation).Size();
+	float DistanceB = (B.Generator->GetPlayerChunkPosition() - B.ChunkLocation).Size();
+	return DistanceA < DistanceB;
 }

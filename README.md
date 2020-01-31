@@ -2,7 +2,7 @@
 
 Learning UE4, Marching Cubes
 
-![Main](./images/main.png)
+![Main](./Images/main.png)
 
 ---
 

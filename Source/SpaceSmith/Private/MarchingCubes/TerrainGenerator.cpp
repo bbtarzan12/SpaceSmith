@@ -31,7 +31,7 @@ void ATerrainGenerator::BeginPlay()
 	ChunkWorker = new FTerrainChunkWorker(this);
 	ChunkWorker->Start();
 
-	Character = Cast<ASpaceSmithCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	Character = Cast<APawn>(GetWorld()->GetFirstPlayerController()->GetPawn());
 }
 
 void ATerrainGenerator::EndPlay(const EEndPlayReason::Type EndPlayReason)

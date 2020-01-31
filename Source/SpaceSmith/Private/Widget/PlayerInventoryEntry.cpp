@@ -37,17 +37,22 @@ bool UPlayerInventoryEntry::NativeOnDrop(const FGeometry& InGeometry, const FDra
 
 FText UPlayerInventoryEntry::GetName() const
 {
+	if (ItemSlot == nullptr)
+		return FText::GetEmpty();
+
 	return ItemSlot->Row.Name;
 }
 
 UTexture2D* UPlayerInventoryEntry::GetImage() const
 {
+	if (ItemSlot == nullptr)
+		return UTexture2D::CreateTransient(1, 1);
 	return ItemSlot->Row.Thumbnail;
 }
 
 FText UPlayerInventoryEntry::GetAmount() const
 {
-	if (ItemSlot->Amount <= 0)
+	if (ItemSlot == nullptr || ItemSlot->Amount <= 0)
 		return FText::GetEmpty();
 	return FText::AsNumber(ItemSlot->Amount);
 }

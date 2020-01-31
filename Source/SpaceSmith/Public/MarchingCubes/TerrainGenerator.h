@@ -100,7 +100,7 @@ private:
 	class FTerrainChunkWorker* ChunkWorker;
 
 	UPROPERTY(VisibleAnywhere)
-	class ASpaceSmithCharacter* Character;
+	class APawn* Character;
 
 	UPROPERTY(VisibleAnywhere)
 	TMap<FIntVector, UTerrainChunk*> Chunks;

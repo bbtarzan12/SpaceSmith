@@ -5,10 +5,10 @@
 #include "MarchingCubes/TerrainGenerator.h"
 #include "TerrainData.h"
 
-UTerrainChunk::UTerrainChunk()
+UTerrainChunk::UTerrainChunk(const FObjectInitializer & ObjectInitializer)
+	: Super(ObjectInitializer), bUpdatingMesh(false), bDirty(false)
 {
-	bUpdatingMesh = false;
-	bDirty = false;
+
 }
 
 void UTerrainChunk::SetGenerator(ATerrainGenerator* NewGenerator)

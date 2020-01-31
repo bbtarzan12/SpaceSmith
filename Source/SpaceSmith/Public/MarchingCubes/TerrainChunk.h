@@ -17,7 +17,7 @@ class SPACESMITH_API UTerrainChunk : public UProceduralMeshComponent
 	GENERATED_BODY()
 	
 public:
-	UTerrainChunk();
+	UTerrainChunk(const FObjectInitializer & ObjectInitializer);
 
 	void SetGenerator(class ATerrainGenerator* NewGenerator);
 	void SetDirty(bool bNewDirty);
